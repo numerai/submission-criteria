@@ -15,6 +15,8 @@ import psycopg2.extras
 # First Party
 import submission_criteria.common as common
 
+BENCHMARK = 0.693
+
 
 class DatabaseManager(object):
     def __init__(self):
@@ -75,7 +77,7 @@ class DatabaseManager(object):
             era_data = era_data.sort_values(["id"])
             submission_era_data = submission_era_data.sort_values(["id"])
             logloss = log_loss(era_data.target.values, submission_era_data.probability.values)
-            if logloss < -math.log(0.5):
+            if logloss < BENCHMARK:
                 better_than_random_era_count += 1
 
         consistency = better_than_random_era_count / num_eras * 100
