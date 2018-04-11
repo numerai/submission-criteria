@@ -29,6 +29,21 @@ def get_secret(key):
     return secret
 
 
+def get_round(postgres_db, submission_id):
+    query = """
+        SELECT tournament, round
+        FROM submissions s
+        INNER JOIN rounds r
+          ON s.round_id = r.id
+            AND s.id = %s
+        """
+    cursor = postgres_db.cursor()
+    cursor.execute(query, submission_id)
+    tournament, round_number = cursor.fetchone()
+    cursor.close()
+    return tournament, round_number
+
+
 def get_filename(postgres_db, submission_id):
     query = "SELECT filename, user_id FROM submissions WHERE id = '{}'".format(submission_id)
     cursor = postgres_db.cursor()
@@ -88,6 +103,7 @@ def update_loglosses(submission_id):
     cursor = postgres_db.cursor()
     submission_path = download_submission(postgres_db, submission_id)
     submission = pd.read_csv(submission_path)
+    _tournament, _round_number = get_round(postgres_db, submission_id)
 
     # Get the truth data
     public_targets_db = connect_to_public_targets_db()
