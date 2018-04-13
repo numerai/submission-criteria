@@ -49,11 +49,11 @@ class DatabaseManager(object):
             S3 Bucket data access object for querying competition datasets
         """
         print("Calculating consistency for submission_id {}...".format(submission_id))
-        round_number = self.get_round_number(submission_id)
+        tournament, round_number = common.get_round(self.postgres_db, submission_id)
 
         # Get the tournament data
-        print("Getting public dataset for round number {}".format(round_number))
-        extract_dir = filemanager.download_dataset(round_number)
+        print("Getting public dataset for round number {}-{}".format(tournament, round_number))
+        extract_dir = filemanager.download_dataset(tournament, round_number)
         tournament_data = pd.read_csv(os.path.join(extract_dir, "numerai_tournament_data.csv"))
         # Get the user submission
         s3_file, _ = common.get_filename(self.postgres_db, submission_id)

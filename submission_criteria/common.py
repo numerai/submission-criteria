@@ -31,14 +31,14 @@ def get_secret(key):
 
 def get_round(postgres_db, submission_id):
     query = """
-        SELECT tournament, round
+        SELECT r.tournament, r.number
         FROM submissions s
         INNER JOIN rounds r
           ON s.round_id = r.id
             AND s.id = %s
         """
     cursor = postgres_db.cursor()
-    cursor.execute(query, submission_id)
+    cursor.execute(query, [submission_id])
     tournament, round_number = cursor.fetchone()
     cursor.close()
     return tournament, round_number

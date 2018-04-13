@@ -64,15 +64,18 @@ class FileManager(object):
 
         return local_files
 
-    def download_dataset(self, round_number):
+    def download_dataset(self, tournament, round_number):
         bucket = S3_DATASET_BUCKET
-        s3_path = "{}/numerai_datasets.zip".format(round_number)
-        extract_dir = "{}/numerai_datasets/".format(round_number)
+        s3_path = "t{}/{}/numerai_datasets.zip".format(tournament, round_number)
+        extract_dir = "t{}/{}/numerai_datasets/".format(tournament, round_number)
         local_path = os.path.join(self.local_dir, s3_path)
         local_extract = os.path.join(self.local_dir, extract_dir)
 
-        if not os.path.exists(os.path.join(self.local_dir, str(round_number))):
-            os.makedirs(os.path.join(self.local_dir, str(round_number)))
+        if not os.path.exists(os.path.join(self.local_dir, "t" + str(tournament))):
+            os.makedirs(os.path.join(self.local_dir, "t" + str(tournament)))
+
+        if not os.path.exists(os.path.join(self.local_dir, "t" + str(tournament), str(round_number))):
+            os.makedirs(os.path.join(self.local_dir, "t" + str(tournament), str(round_number)))
 
         if not os.path.isfile(local_path):
             print("Attempting to get file {} from bucket {} to {}".format(s3_path, bucket, local_path))
