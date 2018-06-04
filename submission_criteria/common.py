@@ -13,6 +13,7 @@ import botocore
 from sqlalchemy import create_engine
 from sklearn.metrics import log_loss
 
+TARGETS = ["sentinel", "target", "target_bravo", "target_charlie", "target_delta", "target_echo"]
 S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET", "numerai-production-uploads")
 S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
@@ -103,14 +104,14 @@ def update_loglosses(submission_id):
     cursor = postgres_db.cursor()
     submission_path = download_submission(postgres_db, submission_id)
     submission = pd.read_csv(submission_path)
-    _tournament, _round_number = get_round(postgres_db, submission_id)
+    tournament, _round_number = get_round(postgres_db, submission_id)
 
     # Get the truth data
     public_targets_db = connect_to_public_targets_db()
-    query = "SELECT id, target FROM tournament_historical_encrypted WHERE data_type = 'validation' AND version = 2;"
+    query = "SELECT id, {} FROM tournament_historical_encrypted WHERE data_type = 'validation' AND version = 3;".format(TARGETS[tournament])
     validation_data = pd.read_sql(query, public_targets_db)
     validation_data.sort_values("id", inplace=True)
-    test_data = pd.read_sql("SELECT id, target FROM tournament_historical_encrypted WHERE data_type = 'test' AND version = 2;", public_targets_db)
+    test_data = pd.read_sql("SELECT id, {} FROM tournament_historical_encrypted WHERE data_type = 'test' AND version = 3;".format(TARGETS[tournament]), public_targets_db)
     test_data.sort_values("id", inplace=True)
 
     # Calculate logloss
@@ -118,8 +119,8 @@ def update_loglosses(submission_id):
     submission_validation_data.sort_values("id", inplace=True)
     submission_test_data = submission.loc[submission["id"].isin(test_data["id"].as_matrix())].copy()
     submission_test_data.sort_values("id", inplace=True)
-    validation_logloss = log_loss(validation_data["target"].as_matrix(), submission_validation_data["probability"].as_matrix())
-    test_logloss = log_loss(test_data["target"].as_matrix(), submission_test_data["probability"].as_matrix())
+    validation_logloss = log_loss(validation_data[TARGETS[tournament]].as_matrix(), submission_validation_data["probability"].as_matrix())
+    test_logloss = log_loss(test_data[TARGETS[tournament]].as_matrix(), submission_test_data["probability"].as_matrix())
 
     # Insert values into Postgres
     query = "UPDATE submissions SET validation_logloss={}, test_logloss={} WHERE id = '{}'".format(validation_logloss, test_logloss, submission_id)

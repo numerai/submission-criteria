@@ -15,7 +15,6 @@ import psycopg2.extras
 import submission_criteria.common as common
 
 BENCHMARK = 0.693
-TARGETS = ["sentinel", "target", "target_bravo", "target_charlie", "target_delta", "target_echo"]
 
 class DatabaseManager(object):
     def __init__(self):
@@ -75,7 +74,7 @@ class DatabaseManager(object):
             assert len(submission_era_data > 0), "There must be data for every era"
             era_data = era_data.sort_values(["id"])
             submission_era_data = submission_era_data.sort_values(["id"])
-            logloss = log_loss(era_data[TARGETS[tournament]].values, submission_era_data.probability.values)
+            logloss = log_loss(era_data[common.TARGETS[tournament]].values, submission_era_data.probability.values)
             if logloss < BENCHMARK:
                 better_than_random_era_count += 1
 
