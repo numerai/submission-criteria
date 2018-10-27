@@ -8,6 +8,7 @@ import os
 # Third Party
 import pandas as pd
 from psycopg2 import connect
+import tournament_common as tc
 import boto3
 import botocore
 from sqlalchemy import create_engine
@@ -32,7 +33,7 @@ def get_secret(key):
 
 def get_round(postgres_db, submission_id):
     query = """
-        SELECT r.tournament, r.number
+        SELECT r.tournament, r.number, dataset_path
         FROM submissions s
         INNER JOIN rounds r
           ON s.round_id = r.id
@@ -40,9 +41,9 @@ def get_round(postgres_db, submission_id):
         """
     cursor = postgres_db.cursor()
     cursor.execute(query, [submission_id])
-    tournament, round_number = cursor.fetchone()
+    tournament, round_number, dataset_path = cursor.fetchone()
     cursor.close()
-    return tournament, round_number
+    return tournament, round_number, dataset_path
 
 
 def get_filename(postgres_db, submission_id):
@@ -104,14 +105,14 @@ def update_loglosses(submission_id):
     cursor = postgres_db.cursor()
     submission_path = download_submission(postgres_db, submission_id)
     submission = pd.read_csv(submission_path)
-    tournament, _round_number = get_round(postgres_db, submission_id)
+    tournament, _round_number, dataset_path = get_round(postgres_db, submission_id)
 
     # Get the truth data
     public_targets_db = connect_to_public_targets_db()
-    query = "SELECT id, {} FROM tournament_historical_encrypted WHERE data_type = 'validation' AND version = 3;".format(TARGETS[tournament])
-    validation_data = pd.read_sql(query, public_targets_db)
+    validation_path = tc.get_validation_data(dataset_path)
+    validation_data = pd.read_csv(validation_path)
     validation_data.sort_values("id", inplace=True)
-    test_data = pd.read_sql("SELECT id, {} FROM tournament_historical_encrypted WHERE data_type = 'test' AND version = 3;".format(TARGETS[tournament]), public_targets_db)
+    test_data = tc.get_test_data(dataset_path)
     test_data.sort_values("id", inplace=True)
 
     # Calculate logloss
