@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 # First Party
-import submission_criteria.common as common
+import common
 
 
 def has_concordance(P1, P2, P3, c1, c2, c3, threshold=0.12):
@@ -272,7 +272,7 @@ def submission_concordance(submission, db_manager, filemanager):
     filemanager : FileManager
             S3 Bucket data access object for querying competition datasets
     """
-    tournament, round_number = common.get_round(db_manager.postgres_db, submission["submission_id"])
+    tournament, round_number, _ = common.get_round(db_manager.postgres_db, submission["submission_id"])
     clusters = get_competition_variables(tournament, round_number, filemanager)
     P1, P2, P3 = get_submission_pieces(submission["submission_id"], tournament, round_number, db_manager, filemanager)
     c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters["cluster_3"]

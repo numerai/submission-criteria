@@ -122,7 +122,7 @@ def update_loglosses(submission_id):
     submission_test_data.sort_values("id", inplace=True)
     validation_logloss = log_loss(validation_data[TARGETS[tournament]].as_matrix(), submission_validation_data["probability"].as_matrix())
     test_logloss = log_loss(test_data[TARGETS[tournament]].as_matrix(), submission_test_data["probability"].as_matrix())
-
+    
     # Insert values into Postgres
     query = "UPDATE submissions SET validation_logloss={}, test_logloss={} WHERE id = '{}'".format(validation_logloss, test_logloss, submission_id)
     print(query)

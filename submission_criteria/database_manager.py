@@ -12,7 +12,7 @@ import psycopg2
 import psycopg2.extras
 
 # First Party
-import submission_criteria.common as common
+import common
 
 BENCHMARK = 0.693
 
@@ -48,7 +48,7 @@ class DatabaseManager(object):
             S3 Bucket data access object for querying competition datasets
         """
         print("Calculating consistency for submission_id {}...".format(submission_id))
-        tournament, round_number = common.get_round(self.postgres_db, submission_id)
+        tournament, round_number, _ = common.get_round(self.postgres_db, submission_id)
 
         # Get the tournament data
         print("Getting public dataset for round number {}-{}".format(tournament, round_number))

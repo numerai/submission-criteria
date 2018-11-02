@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 # First Party
-import submission_criteria.common as common
+import common
 
 lock = Lock()
 
