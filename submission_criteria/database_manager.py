@@ -16,7 +16,8 @@ import common
 
 BENCHMARK = 0.693
 
-class DatabaseManager(object):
+
+class DatabaseManager():
     def __init__(self):
         self.postgres_db = common.connect_to_postgres()
 
