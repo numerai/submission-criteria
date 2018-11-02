@@ -87,17 +87,6 @@ def connect_to_postgres():
     return connect(postgres_url)
 
 
-def connect_to_public_targets_db():
-    """Connect to the public targets database."""
-    url = os.environ.get("SQL_URL")
-    if not url:
-        url = get_secret("SQL_URL")
-    if url is None or url == "":
-        raise Exception("You must specify SQL_URL")
-    db = create_engine(url, echo=False)
-    return db
-
-
 def update_loglosses(submission_id):
     """Insert validation and test loglosses into the Postgres database."""
     print("Updating loglosses...")
@@ -108,7 +97,6 @@ def update_loglosses(submission_id):
     tournament, _round_number, dataset_path = get_round(postgres_db, submission_id)
 
     # Get the truth data
-    public_targets_db = connect_to_public_targets_db()
     validation_path = tc.get_validation_data(dataset_path)
     validation_data = pd.read_csv(validation_path)
     validation_data.sort_values("id", inplace=True)
