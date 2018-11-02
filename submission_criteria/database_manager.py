@@ -12,7 +12,7 @@ import psycopg2
 import psycopg2.extras
 
 # First Party
-import common
+import submission_criteria.common as common
 
 BENCHMARK = 0.693
 

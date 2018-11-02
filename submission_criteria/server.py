@@ -19,7 +19,7 @@ from s3_util import FileManager
 from database_manager import DatabaseManager
 import originality
 import concordance
-import common
+import submission_criteria.common as common
 
 PORT = os.environ.get("PORT", "5151")
 API_KEY = os.environ.get("API_KEY")
