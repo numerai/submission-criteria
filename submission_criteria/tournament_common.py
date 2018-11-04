@@ -4,16 +4,13 @@ import boto3
 import botocore
 
 
-def _get_s3_resource():
-    print("get s3 resource", flush=True)
-    S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
-    S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
-    return boto3.resource("s3", aws_access_key_id=S3_ACCESS_KEY, aws_secret_access_key=S3_SECRET_KEY)
+S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
+S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
+S3 = boto3.resource("s3", aws_access_key_id=S3_ACCESS_KEY, aws_secret_access_key=S3_SECRET_KEY)
 
 
 def _download_data_file(bucket, s3_path, s3_file):
     print("download_data_file", flush=True)
-    s3 = _get_s3_resource()
     print("get_s3_resource", flush=True)
     local_path = os.path.join(_get_tmp_directory(), s3_path)
     if not os.path.isdir(local_path):
@@ -21,7 +18,8 @@ def _download_data_file(bucket, s3_path, s3_file):
     s3_pathfile = os.path.join(s3_path, s3_file)
     local_pathfile = os.path.join(local_path, s3_file)
     try:
-        s3.meta.client.download_file(bucket, s3_pathfile, local_pathfile)
+        print("try")
+        S3.meta.client.download_file(bucket, s3_pathfile, local_pathfile)
     except (botocore.exceptions.ClientError,
             botocore.exceptions.EndpointConnectionError) as e:
         print("Error when downloading {}: {}".format(s3_pathfile, str(e)))
