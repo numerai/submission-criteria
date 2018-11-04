@@ -35,6 +35,10 @@ def get_s3_dataset_path(date):
 
 
 def _download_tournament_data_file(s3_path, s3_file):
+    print("hi anson")
+    print(s3_path)
+    print(s3_file)
+    print(os.environ)
     bucket = "numerai-tournament-data"
     print(os.environ.get("S3_ACCESS_KEY")[:5])
     print(os.environ.get("S3_SECRET_KEY")[:5])
