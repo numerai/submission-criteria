@@ -98,9 +98,12 @@ def update_loglosses(submission_id):
     submission = pd.read_csv(submission_path)
     tournament, _round_number, dataset_path = get_round(postgres_db, submission_id)
 
+    print("anson-debug: common update_loglosses")
     # Get the truth data
     validation_path = tc.get_validation_data(dataset_path)
+    print("validation_path:{}".format(validation_path))
     validation_data = pd.read_csv(validation_path)
+    print("after read csv")
     validation_data.sort_values("id", inplace=True)
     test_data = tc.get_test_data(dataset_path)
     test_data.sort_values("id", inplace=True)
