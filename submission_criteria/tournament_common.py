@@ -11,6 +11,7 @@ def _get_s3_resource():
 
 
 def _download_data_file(bucket, s3_path, s3_file):
+    print("download_data_file")
     s3 = _get_s3_resource()
     local_path = os.path.join(_get_tmp_directory(), s3_path)
     if not os.path.isdir(local_path):
@@ -40,8 +41,6 @@ def _download_tournament_data_file(s3_path, s3_file):
     print(s3_file)
     print(os.environ)
     bucket = "numerai-tournament-data"
-    print(os.environ.get("S3_ACCESS_KEY")[:5])
-    print(os.environ.get("S3_SECRET_KEY")[:5])
     return _download_data_file(bucket, s3_path, s3_file)
 
 
