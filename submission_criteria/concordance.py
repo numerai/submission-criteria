@@ -9,9 +9,17 @@ from sklearn.cluster import MiniBatchKMeans
 from scipy.stats import ks_2samp
 import numpy as np
 import pandas as pd
+import boto3
 
 # First Party
 import submission_criteria.common as common
+
+S3_INPUT_DATA_BUCKET = "numerai-tournament-data"
+INPUT_DATA_PATH = '/tmp/numerai-input-data'
+S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
+S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
+s3 = boto3.resource(
+    "s3", aws_access_key_id=S3_ACCESS_KEY, aws_secret_access_key=S3_SECRET_KEY)
 
 
 def has_concordance(P1, P2, P3, c1, c2, c3, threshold=0.12):
@@ -48,9 +56,13 @@ def has_concordance(P1, P2, P3, c1, c2, c3, threshold=0.12):
     ks = []
     for i in set(c1):
 
-        ks_score = max(ks_2samp(P1.reshape(-1)[c1 == i], P2.reshape(-1)[c2 == i])[0],
-                       ks_2samp(P1.reshape(-1)[c1 == i], P3.reshape(-1)[c3 == i])[0],
-                       ks_2samp(P3.reshape(-1)[c3 == i], P2.reshape(-1)[c2 == i])[0])
+        ks_score = max(
+            ks_2samp(P1.reshape(-1)[c1 == i],
+                     P2.reshape(-1)[c2 == i])[0],
+            ks_2samp(P1.reshape(-1)[c1 == i],
+                     P3.reshape(-1)[c3 == i])[0],
+            ks_2samp(P3.reshape(-1)[c3 == i],
+                     P2.reshape(-1)[c2 == i])[0])
 
         ks.append(ks_score)
     logging.getLogger().info("Noticed score {}".format(np.mean(ks)))
@@ -115,7 +127,8 @@ def get_ids(filemanager, tournament_number, round_number):
         List of all ids in the 'live' dataset
     """
     extract_dir = filemanager.download_dataset(tournament_number, round_number)
-    tournament = pd.read_csv(os.path.join(extract_dir, "numerai_tournament_data.csv"))
+    tournament = pd.read_csv(
+        os.path.join(extract_dir, "numerai_tournament_data.csv"))
     val = tournament[tournament["data_type"] == "validation"]
     test = tournament[tournament["data_type"] == "test"]
     live = tournament[tournament["data_type"] == "live"]
@@ -193,11 +206,15 @@ def get_competition_variables(tournament_number, round_number, filemanager):
     """
     extract_dir = filemanager.download_dataset(tournament_number, round_number)
 
-    training = pd.read_csv(os.path.join(extract_dir, "numerai_training_data.csv"))
-    tournament = pd.read_csv(os.path.join(extract_dir, "numerai_tournament_data.csv"))
+    training = pd.read_csv(
+        os.path.join(extract_dir, "numerai_training_data.csv"))
+    tournament = pd.read_csv(
+        os.path.join(extract_dir, "numerai_tournament_data.csv"))
 
-    val_ids, test_ids, live_ids = get_ids(filemanager, tournament_number, round_number)
-    return get_competition_variables_from_df(round_number, training, tournament, val_ids, test_ids, live_ids)
+    val_ids, test_ids, live_ids = get_ids(filemanager, tournament_number,
+                                          round_number)
+    return get_competition_variables_from_df(
+        round_number, training, tournament, val_ids, test_ids, live_ids)
 
 
 def get_competition_variables_from_df(
@@ -222,7 +239,8 @@ def get_competition_variables_from_df(
     return variables
 
 
-def get_submission_pieces(submission_id, tournament, round_number, db_manager, filemanager):
+def get_submission_pieces(submission_id, tournament, round_number, db_manager,
+                          filemanager):
     """Get validation, test, and live ids sorted from submission_id
 
     Parameters:
@@ -253,8 +271,10 @@ def get_submission_pieces(submission_id, tournament, round_number, db_manager, f
     s3_file, _ = common.get_filename(db_manager.postgres_db, submission_id)
     local_file = filemanager.download([s3_file])[0]
     data = pd.read_csv(local_file)
-    val_ids, test_ids, live_ids = get_ids(filemanager, tournament, round_number)
-    validation, tests, live = get_sorted_split(data, val_ids, test_ids, live_ids)
+    val_ids, test_ids, live_ids = get_ids(filemanager, tournament,
+                                          round_number)
+    validation, tests, live = get_sorted_split(data, val_ids, test_ids,
+                                               live_ids)
     return validation, tests, live
 
 
@@ -272,18 +292,23 @@ def submission_concordance(submission, db_manager, filemanager):
     filemanager : FileManager
             S3 Bucket data access object for querying competition datasets
     """
-    tournament, round_number = common.get_round(db_manager.postgres_db, submission["submission_id"])
+    tournament, round_number, _dataset_path = common.get_round(
+        db_manager.postgres_db, submission["submission_id"])
     clusters = get_competition_variables(tournament, round_number, filemanager)
-    P1, P2, P3 = get_submission_pieces(submission["submission_id"], tournament, round_number, db_manager, filemanager)
-    c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters["cluster_3"]
+    P1, P2, P3 = get_submission_pieces(submission["submission_id"], tournament,
+                                       round_number, db_manager, filemanager)
+    c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters[
+        "cluster_3"]
 
     try:
         concordance = has_concordance(P1, P2, P3, c1, c2, c3)
     except IndexError:
         # If we had an indexing error, that is because the round restart, and we need to try getting the new competition variables.
         get_competition_variables.cache_clear()
-        clusters = get_competition_variables(tournament, round_number, filemanager)
-        c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters["cluster_3"]
+        clusters = get_competition_variables(tournament, round_number,
+                                             filemanager)
+        c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters[
+            "cluster_3"]
         concordance = has_concordance(P1, P2, P3, c1, c2, c3)
 
     db_manager.write_concordance(submission['submission_id'], concordance)

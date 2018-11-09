@@ -10,14 +10,23 @@ import pandas as pd
 from psycopg2 import connect
 import boto3
 import botocore
-from sqlalchemy import create_engine
 from sklearn.metrics import log_loss
 
-TARGETS = ["sentinel", "target_bernie", "target_elizabeth", "target_jordan", "target_ken", "target_charles"]
+# First Party
+import tournament_common as tc
+
+TARGETS = [
+    "sentinel", "target_bernie", "target_elizabeth", "target_jordan",
+    "target_ken", "target_charles"
+]
 S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET", "numerai-production-uploads")
 S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
-s3 = boto3.resource("s3", aws_access_key_id=S3_ACCESS_KEY, aws_secret_access_key=S3_SECRET_KEY)
+s3 = boto3.resource(
+    "s3", aws_access_key_id=S3_ACCESS_KEY, aws_secret_access_key=S3_SECRET_KEY)
+
+S3_INPUT_DATA_BUCKET = "numerai-tournament-data"
+INPUT_DATA_PATH = '/tmp/numerai-input-data'
 
 
 def get_secret(key):
@@ -32,7 +41,7 @@ def get_secret(key):
 
 def get_round(postgres_db, submission_id):
     query = """
-        SELECT r.tournament, r.number
+        SELECT r.tournament, r.number, r.dataset_path
         FROM submissions s
         INNER JOIN rounds r
           ON s.round_id = r.id
@@ -40,13 +49,14 @@ def get_round(postgres_db, submission_id):
         """
     cursor = postgres_db.cursor()
     cursor.execute(query, [submission_id])
-    tournament, round_number = cursor.fetchone()
+    tournament, round_number, dataset_path = cursor.fetchone()
     cursor.close()
-    return tournament, round_number
+    return tournament, round_number, dataset_path
 
 
 def get_filename(postgres_db, submission_id):
-    query = "SELECT filename, user_id FROM submissions WHERE id = '{}'".format(submission_id)
+    query = "SELECT filename, user_id FROM submissions WHERE id = '{}'".format(
+        submission_id)
     cursor = postgres_db.cursor()
     cursor.execute(query)
     results = cursor.fetchone()
@@ -86,17 +96,6 @@ def connect_to_postgres():
     return connect(postgres_url)
 
 
-def connect_to_public_targets_db():
-    """Connect to the public targets database."""
-    url = os.environ.get("SQL_URL")
-    if not url:
-        url = get_secret("SQL_URL")
-    if url is None or url == "":
-        raise Exception("You must specify SQL_URL")
-    db = create_engine(url, echo=False)
-    return db
-
-
 def update_loglosses(submission_id):
     """Insert validation and test loglosses into the Postgres database."""
     print("Updating loglosses...")
@@ -104,29 +103,36 @@ def update_loglosses(submission_id):
     cursor = postgres_db.cursor()
     submission_path = download_submission(postgres_db, submission_id)
     submission = pd.read_csv(submission_path)
-    tournament, _round_number = get_round(postgres_db, submission_id)
+    tournament, _round_number, dataset_path = get_round(
+        postgres_db, submission_id)
 
     # Get the truth data
-    public_targets_db = connect_to_public_targets_db()
-    query = "SELECT id, {} FROM tournament_historical_encrypted WHERE data_type = 'validation' AND version = 3;".format(TARGETS[tournament])
-    validation_data = pd.read_sql(query, public_targets_db)
-    validation_data.sort_values("id", inplace=True)
-    test_data = pd.read_sql("SELECT id, {} FROM tournament_historical_encrypted WHERE data_type = 'test' AND version = 3;".format(TARGETS[tournament]), public_targets_db)
-    test_data.sort_values("id", inplace=True)
+    validation_data = tc.get_validation_data(s3, S3_INPUT_DATA_BUCKET,
+                                             dataset_path, INPUT_DATA_PATH)
+
+    test_data = tc.get_test_data(s3, S3_INPUT_DATA_BUCKET, dataset_path,
+                                 INPUT_DATA_PATH)
 
     # Calculate logloss
-    submission_validation_data = submission.loc[submission["id"].isin(validation_data["id"].as_matrix())].copy()
+    submission_validation_data = submission.loc[submission["id"].isin(
+        validation_data["id"].as_matrix())].copy()
     submission_validation_data.sort_values("id", inplace=True)
-    submission_test_data = submission.loc[submission["id"].isin(test_data["id"].as_matrix())].copy()
+    submission_test_data = submission.loc[submission["id"].isin(
+        test_data["id"].as_matrix())].copy()
     submission_test_data.sort_values("id", inplace=True)
-    validation_logloss = log_loss(validation_data[TARGETS[tournament]].as_matrix(), submission_validation_data["probability"].as_matrix())
-    test_logloss = log_loss(test_data[TARGETS[tournament]].as_matrix(), submission_test_data["probability"].as_matrix())
+    validation_logloss = log_loss(
+        validation_data[TARGETS[tournament]].as_matrix(),
+        submission_validation_data["probability"].as_matrix())
+    test_logloss = log_loss(test_data[TARGETS[tournament]].as_matrix(),
+                            submission_test_data["probability"].as_matrix())
 
     # Insert values into Postgres
-    query = "UPDATE submissions SET validation_logloss={}, test_logloss={} WHERE id = '{}'".format(validation_logloss, test_logloss, submission_id)
+    query = "UPDATE submissions SET validation_logloss={}, test_logloss={} WHERE id = '{}'".format(
+        validation_logloss, test_logloss, submission_id)
     print(query)
     cursor.execute(query)
-    print("Updated {} with validation_logloss={} and test_logloss={}".format(submission_id, validation_logloss, test_logloss))
+    print("Updated {} with validation_logloss={} and test_logloss={}".format(
+        submission_id, validation_logloss, test_logloss))
     postgres_db.commit()
     cursor.close()
     postgres_db.close()
