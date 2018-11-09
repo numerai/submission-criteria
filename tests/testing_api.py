@@ -13,7 +13,7 @@ import requests
 API_TOURNAMENT_URL = 'https://api-tournament.numer.ai'
 
 
-class NumerAPI(object):
+class NumerAPI():
 
     """Wrapper around the Numerai API"""
 
@@ -91,7 +91,7 @@ class NumerAPI(object):
             return dataset_path
 
         # get link to current dataset
-        query = "query {dataset}"
+        query = "query {dataset(tournament: 1)}"
         url = self.raw_query(query)['data']['dataset']
         # download
         dataset_res = requests.get(url, stream=True)

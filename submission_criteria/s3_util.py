@@ -16,7 +16,7 @@ S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
 
 
-class FileManager(object):
+class FileManager():
 
     def __init__(self, local_dir, log=None):
         self.local_dir = local_dir

@@ -3,7 +3,7 @@ import statistics
 from datetime import datetime
 
 
-class Benchmark(object):
+class Benchmark():
     def __init__(self, n_runs: int = 5, print_checkpoint: bool = True):
         self.n_runs = n_runs
         self.print_checkpoint = print_checkpoint
