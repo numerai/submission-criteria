@@ -16,6 +16,7 @@ import submission_criteria.common as common
 
 BENCHMARK = 0.693
 
+
 class DatabaseManager(object):
     def __init__(self):
         self.postgres_db = common.connect_to_postgres()
@@ -48,7 +49,7 @@ class DatabaseManager(object):
             S3 Bucket data access object for querying competition datasets
         """
         print("Calculating consistency for submission_id {}...".format(submission_id))
-        tournament, round_number = common.get_round(self.postgres_db, submission_id)
+        tournament, round_number, _dataset_path = common.get_round(self.postgres_db, submission_id)
 
         # Get the tournament data
         print("Getting public dataset for round number {}-{}".format(tournament, round_number))
