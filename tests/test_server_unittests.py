@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """Machine Learning Server Unit Testing."""
 
 # System
@@ -12,10 +11,7 @@ from pqueue import Queue
 
 
 class TestServerFailover(unittest.TestCase):
-    fake_requests = [
-        "Not a real request",
-        "Also not a real request"
-    ]
+    fake_requests = ["Not a real request", "Also not a real request"]
 
     def queue_persistence(self, queue, tdir, qdir):
         self.assertEqual(queue.qsize(), 0)
@@ -45,13 +41,15 @@ class TestServerFailover(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             with tempfile.TemporaryDirectory() as originality_dir:
                 originality_queue = Queue(originality_dir, tempdir=temp_dir)
-                self.queue_persistence(originality_queue, temp_dir, originality_dir)
+                self.queue_persistence(originality_queue, temp_dir,
+                                       originality_dir)
 
     def _test_concordance_queue(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             with tempfile.TemporaryDirectory() as concordance_dir:
                 concordance_queue = Queue(concordance_dir, tempdir=temp_dir)
-                self.queue_persistence(concordance_queue, temp_dir, concordance_dir)
+                self.queue_persistence(concordance_queue, temp_dir,
+                                       concordance_dir)
 
 
 if __name__ == '__main__':

@@ -44,17 +44,23 @@ def get_submission(db_manager, filemanager, submission_id):
 
         local_files = filemanager.download([s3_filename])
         if len(local_files) != 1:
-            logging.getLogger().info("Error looking for submission {}, found files {}".format(submission_id, local_files))
+            logging.getLogger().info(
+                "Error looking for submission {}, found files {}".format(
+                    submission_id, local_files))
             return None
 
         local_file = local_files[0]
     except Exception:
-        logging.getLogger().info("Could not get submission {} at S3 path {}".format(submission_id, s3_filename))
+        logging.getLogger().info(
+            "Could not get submission {} at S3 path {}".format(
+                submission_id, s3_filename))
         return None
 
     df = pd.read_csv(local_file)
-    assert "id" in df.columns, "No id column in submission {}".format(s3_filename)
-    assert "probability" in df.columns, "No probability column in submission {}".format(s3_filename)
+    assert "id" in df.columns, "No id column in submission {}".format(
+        s3_filename)
+    assert "probability" in df.columns, "No probability column in submission {}".format(
+        s3_filename)
 
     df.sort_values("id", inplace=True)
     df = df["probability"]
@@ -134,7 +140,9 @@ def originality_score(data1, data2):
     return d
 
 
-def is_almost_unique(submission_data, submission, db_manager, filemanager, is_exact_dupe_thresh, is_similar_thresh, max_similar_models):
+def is_almost_unique(submission_data, submission, db_manager, filemanager,
+                     is_exact_dupe_thresh, is_similar_thresh,
+                     max_similar_models):
     """Determines how similar/exact a submission is to all other submission for the competition round
 
     Paramters:
@@ -172,7 +180,8 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
     similar_models = []
     is_not_a_constant = np.std(submission[:, 0]) > 0
 
-    date_created = db_manager.get_date_created(submission_data['submission_id'])
+    date_created = db_manager.get_date_created(
+        submission_data['submission_id'])
 
     get_others = db_manager.get_everyone_elses_recent_submssions
 
@@ -189,7 +198,8 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
         if is_not_a_constant and np.std(other_submission[:, 0]) > 0:
             correlation = pearsonr(submission[:, 0], other_submission[:, 0])[0]
             if np.abs(correlation) > 0.95:
-                msg = "Found a highly correlated submission {} with score {}".format(user_sub["id"], correlation)
+                msg = "Found a highly correlated submission {} with score {}".format(
+                    user_sub["id"], correlation)
                 logging.getLogger().info(msg)
                 is_original = False
                 break
@@ -207,14 +217,18 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
 
             score = originality_score(submission[:, 1], other_submission[:, 1])
             if score < is_exact_dupe_thresh:
-                logging.getLogger().info("Found a duplicate submission {} with score {}".format(user_sub["id"], score))
+                logging.getLogger().info(
+                    "Found a duplicate submission {} with score {}".format(
+                        user_sub["id"], score))
                 is_original = False
                 break
             if score <= is_similar_thresh:
                 num_similar_models += 1
                 similar_models.append(user_sub["id"])
                 if num_similar_models >= max_similar_models:
-                    logging.getLogger().info("Found too many similar models. Similar models were {}".format(similar_models))
+                    logging.getLogger().info(
+                        "Found too many similar models. Similar models were {}"
+                        .format(similar_models))
                     is_original = False
                     break
 
@@ -240,25 +254,31 @@ def submission_originality(submission_data, db_manager, filemanager):
     filemanager : FileManager
         S3 Bucket data access object for querying competition datasets
     """
-    query = "SELECT round_id, user_id FROM submissions WHERE id='{}'".format(submission_data["submission_id"])
+    query = "SELECT round_id, user_id FROM submissions WHERE id='{}'".format(
+        submission_data["submission_id"])
     cursor = db_manager.postgres_db.cursor()
     cursor.execute(query)
     results = cursor.fetchone()
     cursor.close()
     submission_data["round_id"] = results[0]
     submission_data["user_id"] = results[1]
-    logging.getLogger().info("Scoring user_id {} submission_id {}".format(submission_data["user_id"], submission_data['submission_id']))
+    logging.getLogger().info("Scoring user_id {} submission_id {}".format(
+        submission_data["user_id"], submission_data['submission_id']))
 
     with lock:
-        submission = get_submission(db_manager, filemanager, submission_data['submission_id'])
+        submission = get_submission(db_manager, filemanager,
+                                    submission_data['submission_id'])
 
     if submission is None:
-        logging.getLogger().info("Couldn't find submission {}".format(submission_data['submission_id']))
+        logging.getLogger().info("Couldn't find submission {}".format(
+            submission_data['submission_id']))
         return
 
     is_exact_dupe_thresh = 0.005
     is_similar_thresh = 0.03
     max_similar_models = 1
 
-    is_original = is_almost_unique(submission_data, submission, db_manager, filemanager, is_exact_dupe_thresh, is_similar_thresh, max_similar_models)
+    is_original = is_almost_unique(submission_data, submission, db_manager,
+                                   filemanager, is_exact_dupe_thresh,
+                                   is_similar_thresh, max_similar_models)
     db_manager.write_originality(submission_data['submission_id'], is_original)
