@@ -27,4 +27,4 @@ scikit_learn == 0.19.0
 # Cython == 0.26.1
 
 # required by integration_test.py
-xgboost==0.6a2
+xgboost==0.81

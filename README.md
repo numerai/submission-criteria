@@ -81,6 +81,10 @@ Test the server:
 curl -vv -H "Content-Type: application/json" -X POST -d '{"submission_id": "7496e75d-8be1-445f-8883-9f565d9a7244", "api_key": "h/52y/E7cm8Ih4F3cVdlBM4ZQxER+Apk6P0L7yR0lFU="}' 'http://localhost:5151/'
 ```
 
+Installing XGBoost
+==================
+If you are having problems installing XGBoost on Mac try `brew uninstall gcc@5` and `brew install gcc@7`. Otherwise check out [this guide](https://xgboost.readthedocs.io/en/latest/build.html).
+
 Deployment
 ==========
 - Create Elastic Beanstalk environemnt: `./deploy/new-environment.sh api-ml-production api-ml-production`
