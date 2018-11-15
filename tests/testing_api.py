@@ -14,7 +14,6 @@ API_TOURNAMENT_URL = 'https://api-tournament.numer.ai'
 
 
 class NumerAPI():
-
     """Wrapper around the Numerai API"""
 
     def __init__(self, public_id=None, secret_key=None, verbosity="INFO"):
@@ -66,7 +65,9 @@ class NumerAPI():
 
         return True
 
-    def download_current_dataset(self, dest_path=".", dest_filename=None,
+    def download_current_dataset(self,
+                                 dest_path=".",
+                                 dest_filename=None,
                                  unzip=True):
         """download dataset for current round
 
@@ -133,10 +134,11 @@ class NumerAPI():
         variables (dict): dict of variables
         authorization (bool): does the request require authorization
         """
-        body = {'query': query,
-                'variables': variables}
-        headers = {'Content-type': 'application/json',
-                   'Accept': 'application/json'}
+        body = {'query': query, 'variables': variables}
+        headers = {
+            'Content-type': 'application/json',
+            'Accept': 'application/json'
+        }
         if authorization and self.token:
             public_id, secret_key = self.token
             headers['Authorization'] = \
@@ -401,7 +403,9 @@ class NumerAPI():
             submission_id = self.submission_id
 
         if submission_id is None:
-            raise ValueError('You need to submit something first or provide a submission ID')
+            raise ValueError(
+                'You need to submit something first or provide a submission ID'
+            )
 
         query = '''
             query($submission_id: String!) {
@@ -441,7 +445,8 @@ class NumerAPI():
             }
             '''
         variable = {'filename': os.path.basename(file_path)}
-        submission_resp = self.raw_query(auth_query, variable, authorization=True)
+        submission_resp = self.raw_query(
+            auth_query, variable, authorization=True)
         submission_auth = submission_resp['data']['submission_upload_auth']
         with open(file_path, 'rb') as fh:
             requests.put(submission_auth['url'], data=fh.read())
@@ -483,10 +488,12 @@ class NumerAPI():
               }
         }
         '''
-        arguments = {'code': 'somecode',
-                     'confidence': str(confidence),
-                     'password': "somepassword",
-                     'round': self.get_current_round(),
-                     'value': str(value)}
+        arguments = {
+            'code': 'somecode',
+            'confidence': str(confidence),
+            'password': "somepassword",
+            'round': self.get_current_round(),
+            'value': str(value)
+        }
         result = self.raw_query(query, arguments, authorization=True)
         return result

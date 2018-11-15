@@ -13,17 +13,15 @@ class Benchmark():
         print('[%s] - %s' % (datetime.now(), message))
 
     def log_stats(self, times: list, unit: str = 'ms'):
-        self.log('[iteration %s/%s] %s' % (len(times), self.n_runs, self.format_stats(times, unit=unit)))
+        self.log(
+            '[iteration %s/%s] %s' % (len(times), self.n_runs,
+                                      self.format_stats(times, unit=unit)))
 
     @staticmethod
     def format_stats(times: list, unit: str) -> str:
         return 'median: %.2f%s, mean: %.2f%s, stdev: %.2f, max: %.2f%s, min: %.2f%s' % (
-            statistics.median(times), unit,
-            statistics.mean(times), unit,
-            statistics.stdev(times),
-            max(times), unit,
-            min(times), unit
-        )
+            statistics.median(times), unit, statistics.mean(times), unit,
+            statistics.stdev(times), max(times), unit, min(times), unit)
 
     def start(self, suffix: str = None):
         if suffix is None:
