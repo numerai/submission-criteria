@@ -11,7 +11,7 @@ from psycopg2 import connect
 import boto3
 import botocore
 from sklearn.metrics import log_loss
-import tournament_common as tc
+from submission_criteria import tournament_common as tc
 
 TARGETS = ["sentinel", "target_bernie", "target_elizabeth", "target_jordan", "target_ken", "target_charles"]
 S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET", "numerai-production-uploads")

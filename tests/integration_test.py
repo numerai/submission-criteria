@@ -146,7 +146,7 @@ def main():
 
     features = [f for f in list(training_data) if "feature" in f]
     features = features[:len(features) // 2]  # just use half, speed things up a bit
-    X, Y = training_data[features], training_data["target"]
+    X, Y = training_data[features], training_data["target_bernie"]  # hardcode to target bernie for now
 
     x_prediction = tournament_data[features]
     ids = tournament_data["id"]

@@ -11,9 +11,9 @@ import logging
 
 # Third Party
 from pqueue import Queue
+import numpy as np
 from bottle import run, request, route
 from s3_util import FileManager
-import numpy as np
 
 # First Party
 from database_manager import DatabaseManager
