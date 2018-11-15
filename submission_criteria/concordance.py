@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 # First Party
-import submission_criteria.common as common
+from submission_criteria import common
 
 
 def has_concordance(P1, P2, P3, c1, c2, c3, threshold=0.12):
