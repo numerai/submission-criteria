@@ -14,35 +14,11 @@ The server is meant to handle requests that look like the following:
 }
 ```
 
-From there it will ensure that there is an API key for authentication and then queue the requests to the leaderboard_queue. That is then processed by another thread that pushes the submission to a concordance_queue and a originality queue. Those can then calculate the concordance and originality of the submission and update the submission in DB. This pipeline is to ensure that the submission requests are processed in a timely fashion.
+From there it will ensure that there is an API key for authentication and then queue the requests to the leaderboard_queue. That is then processed by another thread that pushes the submission to a concordance_queue. Those can then calculate the concordance of the submission and update the submission in DB. This pipeline is to ensure that the submission requests are processed in a timely fashion.
 
 ## Concordance
 
 There is a separate thread that consumes from the concordance_queue and calculates the concordance for a submission request. We pull the competition data from a designated S3 bucket and calculate the K-Means clustering. From there we pull the submission data from our DB and calculate the concordance using Two-Sample Kolmogorov-Smirnov statistic. Once we have calculated that we update the submission entry in DB with the concordance result.
-
-## Originality
-
-There is a separate thread that consumes from the originality_queue and calculates the originality for a submission request. For the originality score we have to pull all previous submissions for the current competition round and calculate the Two-Sample Kolmogorov-Smirnov score between the submission and all other previous submissions.
-
-If one of the scores falls under a specific threshold it is deemed to be identical to a previous submission is not considered original. Else if it falls under another threshold the submission is considered to be 'similar' and is counted against the submission. After we have compared the submission against all previous ones we check the count of how many submissions the current submission was similar to. If that is greater than a max limit then the model is considered to not be original.
-
-It follows this pseudo-code:
-
-    var curr_submission, similar_count = 0, max_similar = 1
-
-    for submission in get_previous_submissions(curr_submission['date_created']):
-        var ks_score = two_sample_ks(curr_submission, sub)
-        if ks_score < equal_threshold:
-            not_original
-        else if ks_score < similar_threshold:
-            similar_count += 1
-
-    if similar_count >= max_similar:
-        not_original
-    else:
-        original
-
-Once we have determined if a submission is original or not we then update our submission in DB with the originality result.
 
 # Running the server
 

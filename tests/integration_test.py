@@ -51,7 +51,7 @@ submission_executor = ThreadPoolExecutor(max_workers=2)
 
 class NumeraiApiWrapper(NumerAPI):
     """
-    Skips uploading to server to check concordance/originality; not an actual integration test
+    Skips uploading to server to check concordance; not an actual integration test
     if this wrapper is used, but the relevant parts are tested. Use the normal NumerAPI instead
     of NumerApiWrapper and this test will be an integration test behaving in the same way, but
     since there's not dedicated test token that can be used, and no zip support on upload, and
@@ -118,10 +118,6 @@ class NumeraiApiWrapper(NumerAPI):
             value = f.result()
 
         return {
-            'originality': {
-                'pending': pending,
-                'value': value
-            },
             'concordance': {
                 'pending': pending,
                 'value': value
@@ -230,26 +226,17 @@ def main():
         mix_submission_ids.append(f.result())
     logger.info('await mix uploads took %.2fs' % (time.time() - before))
 
-    n_passed_originality, n_passed_concordance = get_originality_and_concordance(
+    n_passed_concordance = get_concordance(
         napi, legit_submission_ids)
-    if len(n_passed_originality) != len(clfs):
-        logger.error('legit passed originality %s/%s' %
-                     (len(n_passed_originality), len(clfs)))
-        sys.exit(1)
     if len(n_passed_concordance) != len(clfs):
         logger.error('legit passed concordance %s/%s' %
                      (len(n_passed_concordance), len(clfs)))
         sys.exit(1)
-
-    n_passed_originality, n_passed_concordance = get_originality_and_concordance(
-        napi, mix_submission_ids)
-    if len(n_passed_originality) > 0:
-        logger.error('mix passed originality %s/%s' %
-                     (len(n_passed_originality), len(clfs)))
-        sys.exit(1)
     else:
         logger.info('all legit tests passed!')
 
+    n_passed_concordance = get_concordance(
+        napi, mix_submission_ids)
     if len(n_passed_concordance) > 0:
         logger.error('mix passed concordance %s/%s' %
                      (len(n_passed_concordance), len(clfs)))
@@ -260,9 +247,8 @@ def main():
     sys.exit(0)
 
 
-def get_originality_and_concordance(napi, _submission_ids):
+def get_concordance(napi, _submission_ids):
     submission_ids = _submission_ids.copy()
-    n_passed_originality = set()
     n_passed_concordance = set()
 
     while True:
@@ -274,13 +260,10 @@ def get_originality_and_concordance(napi, _submission_ids):
         check_later = list()
         for f in futures.as_completed(statuses):
             submission_id = f.result()['id']
-            originality = f.result()['result']['originality']
             concordance = f.result()['result']['concordance']
 
-            if originality['pending'] or concordance['pending']:
+            if concordance['pending']:
                 check_later.append(f.result()['id'])
-            if originality['value']:
-                n_passed_originality.add(submission_id)
             if concordance['value']:
                 n_passed_concordance.add(submission_id)
 
@@ -290,7 +273,7 @@ def get_originality_and_concordance(napi, _submission_ids):
         submission_ids.clear()
         submission_ids = check_later.copy()
 
-    return n_passed_originality, n_passed_concordance
+    return n_passed_concordance
 
 
 def check_status(napi, submission_id):
