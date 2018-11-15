@@ -13,7 +13,7 @@ sqlalchemy == 1.1.14
 mysqlclient == 1.3.12
 
 # Misc requirements:
-requests == 2.12.4
+requests == 2.20.0
 setuptools == 33.1.1
 numpy == 1.11.0
 botocore == 1.7.9
