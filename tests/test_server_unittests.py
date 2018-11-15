@@ -27,22 +27,10 @@ class TestServerFailover(unittest.TestCase):
             queue.get()
         self.assertEqual(queue.qsize(), 0)
 
-    def test_originality_queue(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self._test_originality_queue()
-
     def test_concordance_queue(self):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             self._test_concordance_queue()
-
-    def _test_originality_queue(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with tempfile.TemporaryDirectory() as originality_dir:
-                originality_queue = Queue(originality_dir, tempdir=temp_dir)
-                self.queue_persistence(originality_queue, temp_dir,
-                                       originality_dir)
 
     def _test_concordance_queue(self):
         with tempfile.TemporaryDirectory() as temp_dir:

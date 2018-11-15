@@ -168,11 +168,6 @@ class NumerAPI():
                     pending
                     value
                   }
-                  originality {
-                    pending
-                    value
-                  }
-
                   liveLogloss
                   submissionId
                   username
@@ -410,10 +405,6 @@ class NumerAPI():
         query = '''
             query($submission_id: String!) {
               submissions(id: $submission_id) {
-                originality {
-                  pending
-                  value
-                }
                 concordance {
                   pending
                   value

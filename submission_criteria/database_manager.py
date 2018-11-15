@@ -2,7 +2,6 @@
 """Data access class"""
 import os
 import datetime
-import logging
 
 # Third Party
 import pandas as pd
@@ -94,14 +93,11 @@ class DatabaseManager():
 
         print("Consistency: {}".format(consistency))
 
-        # Update consistency and insert pending originality and concordance into Postgres
+        # Update consistency and insert pending concordance into Postgres
         cursor = self.postgres_db.cursor()
         cursor.execute(
             "UPDATE submissions SET consistency={} WHERE id = '{}'".format(
                 consistency, submission_id))
-        cursor.execute(
-            "INSERT INTO originalities(pending, submission_id) VALUES(TRUE, '{}') ON CONFLICT (submission_id) DO NOTHING;"
-            .format(submission_id))
         cursor.execute(
             "INSERT INTO concordances(pending, submission_id) VALUES(TRUE, '{}') ON CONFLICT (submission_id) DO NOTHING;"
             .format(submission_id))
@@ -122,27 +118,6 @@ class DatabaseManager():
         cursor = self.postgres_db.cursor()
         query = "UPDATE concordances SET pending=FALSE, value={} WHERE submission_id = '{}'".format(
             concordance, submission_id)
-        cursor.execute(query)
-        self.postgres_db.commit()
-        cursor.close()
-
-    def write_originality(self, submission_id, is_original):
-        """ Write to both the submission and leaderboard
-
-        Parameters:
-        -----------
-        submission_id : string
-            The ID of the submission
-
-        is_original : bool
-            Originality value for the submission
-        """
-        cursor = self.postgres_db.cursor()
-        logging.getLogger().info(
-            "Writing out submission_id {} originality {}".format(
-                submission_id, is_original))
-        query = "UPDATE originalities SET pending=FALSE, value={} WHERE submission_id = '{}'".format(
-            is_original, submission_id)
         cursor.execute(query)
         self.postgres_db.commit()
         cursor.close()

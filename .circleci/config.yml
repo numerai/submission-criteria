@@ -36,7 +36,6 @@ jobs:
           name: Run Benchmarks
           command: |
             . venv/bin/activate
-            ./tests/benchmark_originality.py
             ./tests/test_server_unittests.py
             ./tests/integration_test.py
       - run:

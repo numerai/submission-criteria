@@ -5,7 +5,6 @@
 import threading
 import sys
 import os
-import argparse
 from datetime import datetime
 import logging
 
@@ -17,7 +16,6 @@ from s3_util import FileManager
 
 # First Party
 from database_manager import DatabaseManager
-import originality
 import concordance
 import common
 
@@ -34,7 +32,6 @@ for d in [TEMP_DIR, OQ_DIR, CQ_DIR, LB_TEMP_DIR, LBQ_DIR]:
     if not os.path.exists(d):
         os.makedirs(d)
 
-originality_queue = Queue(OQ_DIR, tempdir=TEMP_DIR)
 concordance_queue = Queue(CQ_DIR, tempdir=TEMP_DIR)
 leaderboard_queue = Queue(LBQ_DIR, tempdir=LB_TEMP_DIR)
 
@@ -43,7 +40,7 @@ leaderboard_queue = Queue(LBQ_DIR, tempdir=LB_TEMP_DIR)
 def queue_for_scoring():
     """ Recieves a submission and authenticates that the request has a valid API key.
 
-    Once authenticated the submission request is then queued to the leaderboard_queue and later checked for concordance and originality.
+    Once authenticated the submission request is then queued to the leaderboard_queue and later checked for concordance.
 
     """
     json = request.json
@@ -73,14 +70,14 @@ def queue_for_scoring():
 
 
 def put_submission_on_lb(db_manager, filemanager):
-    """Pulls submissions from leaderboard_queue and pushes submissions to concordance and originality queue for scoring"""
+    """Pulls submissions from leaderboard_queue and pushes submissions to concordance queue for scoring"""
     while True:
         submission = leaderboard_queue.get()
         try:
             db_manager.update_leaderboard(submission["submission_id"],
                                           filemanager)
 
-            for queue in [originality_queue, concordance_queue]:
+            for queue in [concordance_queue]:
                 queue.put(submission)
 
             leaderboard_queue.task_done()
@@ -106,28 +103,6 @@ def score_concordance(db_manager, filemanager):
             logging.exception("Exception scoring concordance.")
 
 
-def score_originality(db_manager, filemanager):
-    """Pulls submission from originality_queue for originality check"""
-    while True:
-        submission_data = originality_queue.get()
-        submission_id = submission_data["submission_id"]
-        try:
-            originality.submission_originality(submission_data, db_manager,
-                                               filemanager)
-            if 'enqueue_time' in submission_data:
-                time_taken = datetime.now() - submission_data['enqueue_time']
-                logging.getLogger().info(
-                    "Submission {} took {} to complete originality".format(
-                        submission_id, time_taken))
-
-            originality_queue.task_done()
-
-        except Exception:
-            logging.exception(
-                "Exception scoring originality for submission id {}.".format(
-                    submission_id))
-
-
 def create_logger():
     """Configure the logger to print process ID."""
     root = logging.getLogger()
@@ -150,20 +125,9 @@ def main():
     it gives it to the put_submission_on_lb. This makes sure that the user is on the
     leaderboard/ the leaderboard reflects their most up to date submission.
 
-    That method then enqueues the submission for concordance and originality checks.
+    That method then enqueues the submission for concordance check.
     """
     np.random.seed(1337)
-
-    parser = argparse.ArgumentParser(
-        description="Score if submissions are original.")
-    parser.add_argument(
-        "--num_threads",
-        dest="num_threads",
-        type=int,
-        default=32,
-        help="Number of threads to use.")
-    parser.set_defaults(local=False)
-    args = parser.parse_args()
 
     create_logger()
     db_manager = DatabaseManager()
@@ -173,15 +137,11 @@ def main():
     threading.Thread(
         target=run, kwargs=dict(host='0.0.0.0', port=int(PORT))).start()
     logging.getLogger().info(
-        "Spawning new threads to score originality and concordance")
+        "Spawning new threads to score concordance")
 
     threading.Thread(
         target=put_submission_on_lb,
         kwargs=dict(db_manager=db_manager, filemanager=fm)).start()
-    for _ in range(args.num_threads - 3):
-        threading.Thread(
-            target=score_originality,
-            kwargs=dict(db_manager=db_manager, filemanager=fm)).start()
     threading.Thread(
         target=score_concordance,
         kwargs=dict(db_manager=db_manager, filemanager=fm)).start()
