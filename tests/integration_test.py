@@ -33,7 +33,6 @@ from submission_criteria.concordance import get_sorted_split
 from submission_criteria.concordance import has_concordance
 from submission_criteria.concordance import get_competition_variables_from_df
 
-
 DATA_SET_PATH = 'tests/numerai_datasets'
 DATA_SET_FILE = 'numerai_dataset'
 TRAIN_FILE = 'numerai_training_data.csv'
@@ -43,8 +42,7 @@ clf_n_jobs = 2
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s"
-)
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger('integration_test')
 upload_executor = ThreadPoolExecutor(max_workers=10)
 clf_executor = ThreadPoolExecutor(max_workers=clf_n_jobs)
@@ -64,8 +62,10 @@ class NumeraiApiWrapper(NumerAPI):
     the relevant methods from this wrapper to avoid trying to mock http requests (we're not
     testing the NumerAPI after all).
     """
+
     def __init__(self, public_id=None, secret_key=None, verbosity="INFO"):
-        super(NumeraiApiWrapper, self).__init__(public_id, secret_key, verbosity)
+        super(NumeraiApiWrapper, self).__init__(public_id, secret_key,
+                                                verbosity)
         self.checked = set()
         self.cluster_ids = dict()
         self.clusters = dict()
@@ -73,24 +73,34 @@ class NumeraiApiWrapper(NumerAPI):
 
     def set_data(self, tournament_data, training_data):
         self.cluster_ids = {
-            'test': tournament_data[tournament_data.data_type == 'test'].id.copy().values.ravel(),
-            'valid': tournament_data[tournament_data.data_type == 'validation'].id.copy().values.ravel(),
-            'live': tournament_data[tournament_data.data_type == 'live'].id.copy().values.ravel(),
+            'test':
+            tournament_data[tournament_data.data_type ==
+                            'test'].id.copy().values.ravel(),
+            'valid':
+            tournament_data[tournament_data.data_type ==
+                            'validation'].id.copy().values.ravel(),
+            'live':
+            tournament_data[tournament_data.data_type == 'live'].id.copy().
+            values.ravel(),
         }
         self.clusters = get_competition_variables_from_df(
-            '1', training_data, tournament_data,
-            self.cluster_ids['valid'], self.cluster_ids['test'], self.cluster_ids['live'])
+            '1', training_data, tournament_data, self.cluster_ids['valid'],
+            self.cluster_ids['test'], self.cluster_ids['live'])
 
     def upload_predictions(self, file_path):
         sub_id = str(uuid())
-        self.futures[sub_id] = submission_executor.submit(self.check_concordance, file_path)
+        self.futures[sub_id] = submission_executor.submit(
+            self.check_concordance, file_path)
         return sub_id
 
     def check_concordance(self, submission_file_path):
         submission = pd.read_csv(submission_file_path)
-        ids_valid, ids_test, ids_live = self.cluster_ids['valid'], self.cluster_ids['test'], self.cluster_ids['live']
-        p1, p2, p3 = get_sorted_split(submission, ids_valid, ids_test, ids_live)
-        c1, c2, c3 = self.clusters['cluster_1'], self.clusters['cluster_2'], self.clusters['cluster_3']
+        ids_valid, ids_test, ids_live = self.cluster_ids[
+            'valid'], self.cluster_ids['test'], self.cluster_ids['live']
+        p1, p2, p3 = get_sorted_split(submission, ids_valid, ids_test,
+                                      ids_live)
+        c1, c2, c3 = self.clusters['cluster_1'], self.clusters[
+            'cluster_2'], self.clusters['cluster_3']
         has_it = has_concordance(p1, p2, p3, c1, c2, c3)
         # logger.info('submission %s has concordance? %s' % (submission_file_path, str(has_it)))
         return has_it
@@ -132,35 +142,63 @@ def main():
     if not os.path.exists(DATA_SET_PATH):
         logger.info("Downloading the current dataset...")
         os.makedirs(DATA_SET_PATH)
-        napi.download_current_dataset(dest_path=DATA_SET_PATH, dest_filename=DATA_SET_FILE + '.zip', unzip=True)
+        napi.download_current_dataset(
+            dest_path=DATA_SET_PATH,
+            dest_filename=DATA_SET_FILE + '.zip',
+            unzip=True)
         import shutil
-        shutil.move(os.path.join(DATA_SET_PATH, DATA_SET_FILE, TRAIN_FILE), os.path.join(DATA_SET_PATH, TRAIN_FILE))
-        shutil.move(os.path.join(DATA_SET_PATH, DATA_SET_FILE, TOURN_FILE), os.path.join(DATA_SET_PATH, TOURN_FILE))
+        shutil.move(
+            os.path.join(DATA_SET_PATH, DATA_SET_FILE, TRAIN_FILE),
+            os.path.join(DATA_SET_PATH, TRAIN_FILE))
+        shutil.move(
+            os.path.join(DATA_SET_PATH, DATA_SET_FILE, TOURN_FILE),
+            os.path.join(DATA_SET_PATH, TOURN_FILE))
     else:
         logger.info("Found old data to use.")
 
-    training_data = pd.read_csv('%s/%s' % (DATA_SET_PATH, TRAIN_FILE), header=0)
-    tournament_data = pd.read_csv('%s/%s' % (DATA_SET_PATH, TOURN_FILE), header=0)
+    training_data = pd.read_csv(
+        '%s/%s' % (DATA_SET_PATH, TRAIN_FILE), header=0)
+    tournament_data = pd.read_csv(
+        '%s/%s' % (DATA_SET_PATH, TOURN_FILE), header=0)
 
     napi.set_data(tournament_data, training_data)
 
     features = [f for f in list(training_data) if "feature" in f]
-    features = features[:len(features) // 2]  # just use half, speed things up a bit
-    X, Y = training_data[features], training_data["target_bernie"]  # hardcode to target bernie for now
+    features = features[:len(features) //
+                        2]  # just use half, speed things up a bit
+    X, Y = training_data[features], training_data[
+        "target_bernie"]  # hardcode to target bernie for now
 
     x_prediction = tournament_data[features]
     ids = tournament_data["id"]
 
     clfs = [
         RandomForestClassifier(
-            n_estimators=15, max_features=1, max_depth=2, n_jobs=1, criterion='entropy', random_state=42),
-        XGBClassifier(learning_rate=0.1, subsample=0.4, max_depth=2, n_estimators=20, nthread=1, seed=42),
+            n_estimators=15,
+            max_features=1,
+            max_depth=2,
+            n_jobs=1,
+            criterion='entropy',
+            random_state=42),
+        XGBClassifier(
+            learning_rate=0.1,
+            subsample=0.4,
+            max_depth=2,
+            n_estimators=20,
+            nthread=1,
+            seed=42),
         DecisionTreeClassifier(max_depth=5, random_state=42),
         MLPClassifier(alpha=1, hidden_layer_sizes=(25, 25), random_state=42),
         GaussianNB(),
         QuadraticDiscriminantAnalysis(tol=1.0e-3),
         # last item can have multiple jobs since it may be the last to be processed so we have an extra core
-        LogisticRegression(n_jobs=2, solver='sag', C=1, tol=1e-2, random_state=42, max_iter=50)
+        LogisticRegression(
+            n_jobs=2,
+            solver='sag',
+            C=1,
+            tol=1e-2,
+            random_state=42,
+            max_iter=50)
     ]
 
     before = time.time()
@@ -168,12 +206,16 @@ def main():
     logger.info('all clfs fit() took %.2fs' % (time.time() - before))
 
     before = time.time()
-    uploads_wait_for_legit = predict_and_upload_legit(napi, clfs, x_prediction, ids)
-    logger.info('all legit clfs predict_proba() took %.2fs' % (time.time() - before))
+    uploads_wait_for_legit = predict_and_upload_legit(napi, clfs, x_prediction,
+                                                      ids)
+    logger.info(
+        'all legit clfs predict_proba() took %.2fs' % (time.time() - before))
 
     before = time.time()
-    uploads_wait_for_mix = predict_and_upload_mix(napi, clfs, tournament_data, x_prediction, ids)
-    logger.info('all mix clfs predict_proba() took %.2fs' % (time.time() - before))
+    uploads_wait_for_mix = predict_and_upload_mix(napi, clfs, tournament_data,
+                                                  x_prediction, ids)
+    logger.info(
+        'all mix clfs predict_proba() took %.2fs' % (time.time() - before))
 
     legit_submission_ids = list()
     mix_submission_ids = list()
@@ -188,23 +230,29 @@ def main():
         mix_submission_ids.append(f.result())
     logger.info('await mix uploads took %.2fs' % (time.time() - before))
 
-    n_passed_originality, n_passed_concordance = get_originality_and_concordance(napi, legit_submission_ids)
+    n_passed_originality, n_passed_concordance = get_originality_and_concordance(
+        napi, legit_submission_ids)
     if len(n_passed_originality) != len(clfs):
-        logger.error('legit passed originality %s/%s' % (len(n_passed_originality), len(clfs)))
+        logger.error('legit passed originality %s/%s' %
+                     (len(n_passed_originality), len(clfs)))
         sys.exit(1)
     if len(n_passed_concordance) != len(clfs):
-        logger.error('legit passed concordance %s/%s' % (len(n_passed_concordance), len(clfs)))
+        logger.error('legit passed concordance %s/%s' %
+                     (len(n_passed_concordance), len(clfs)))
         sys.exit(1)
 
-    n_passed_originality, n_passed_concordance = get_originality_and_concordance(napi, mix_submission_ids)
+    n_passed_originality, n_passed_concordance = get_originality_and_concordance(
+        napi, mix_submission_ids)
     if len(n_passed_originality) > 0:
-        logger.error('mix passed originality %s/%s' % (len(n_passed_originality), len(clfs)))
+        logger.error('mix passed originality %s/%s' %
+                     (len(n_passed_originality), len(clfs)))
         sys.exit(1)
     else:
         logger.info('all legit tests passed!')
 
     if len(n_passed_concordance) > 0:
-        logger.error('mix passed concordance %s/%s' % (len(n_passed_concordance), len(clfs)))
+        logger.error('mix passed concordance %s/%s' %
+                     (len(n_passed_concordance), len(clfs)))
         sys.exit(1)
     else:
         logger.info('all mix tests passed!')
@@ -220,7 +268,8 @@ def get_originality_and_concordance(napi, _submission_ids):
     while True:
         statuses = list()
         for submission_id in submission_ids:
-            statuses.append(upload_executor.submit(check_status, napi, submission_id))
+            statuses.append(
+                upload_executor.submit(check_status, napi, submission_id))
 
         check_later = list()
         for f in futures.as_completed(statuses):
@@ -246,7 +295,10 @@ def get_originality_and_concordance(napi, _submission_ids):
 
 def check_status(napi, submission_id):
     try:
-        return {'id': submission_id, 'result': napi.submission_status(submission_id)}
+        return {
+            'id': submission_id,
+            'result': napi.submission_status(submission_id)
+        }
     except Exception as e:
         logger.exception(traceback.format_exc())
         logger.error('could not check submission status: %s' % str(e))
@@ -270,7 +322,8 @@ def fit_clf(X, Y, clf):
     clf_str = str(clf).split("(")[0]
     clf.fit(X, Y)
     time_taken = '%.2fs' % (time.time() - before)
-    logger.info('fit() took %s%s (%s)' % (time_taken, ' ' * (9 - len(time_taken)), clf_str))
+    logger.info('fit() took %s%s (%s)' % (time_taken, ' ' *
+                                          (9 - len(time_taken)), clf_str))
     return clf_str
 
 
@@ -279,7 +332,9 @@ def predict_and_upload_legit(napi, clfs: list, x_prediction, ids):
     upload_wait_for = list()
 
     for clf in clfs:
-        wait_for.append(clf_executor.submit(predict_and_upload_one_legit, upload_wait_for, napi, clf, x_prediction, ids))
+        wait_for.append(
+            clf_executor.submit(predict_and_upload_one_legit, upload_wait_for,
+                                napi, clf, x_prediction, ids))
 
     before = time.time()
     for _ in futures.as_completed(wait_for):
@@ -289,7 +344,8 @@ def predict_and_upload_legit(napi, clfs: list, x_prediction, ids):
     return upload_wait_for
 
 
-def predict_and_upload_one_legit(upload_wait_for: list, napi, clf, x_prediction, ids):
+def predict_and_upload_one_legit(upload_wait_for: list, napi, clf,
+                                 x_prediction, ids):
     clf_str = str(clf).split("(")[0]
 
     before = time.time()
@@ -298,9 +354,11 @@ def predict_and_upload_one_legit(upload_wait_for: list, napi, clf, x_prediction,
 
     out = os.path.join(test_csv, "{}-legit.csv".format(clf_str))
     time_taken = '%.2fs' % (after - before)
-    logger.info('predict_proba() took %s%s (%s)' % (time_taken, ' ' * (9 - len(time_taken)), out))
+    logger.info('predict_proba() took %s%s (%s)' %
+                (time_taken, ' ' * (9 - len(time_taken)), out))
 
-    upload_wait_for.append(upload_executor.submit(upload_one_legit, y_prediction, ids, out, napi))
+    upload_wait_for.append(
+        upload_executor.submit(upload_one_legit, y_prediction, ids, out, napi))
 
 
 def upload_one_legit(y_prediction, ids, out: str, napi):
@@ -318,7 +376,8 @@ def upload_one_legit(y_prediction, ids, out: str, napi):
         logger.error('error uploading: %s' % str(e))
 
 
-def predict_and_upload_mix(napi, clfs: list, tournament_data: pd.DataFrame, x_prediction, ids):
+def predict_and_upload_mix(napi, clfs: list, tournament_data: pd.DataFrame,
+                           x_prediction, ids):
     valid = tournament_data["data_type"] == "validation"
     test = tournament_data["data_type"] != "validation"
 
@@ -344,8 +403,10 @@ def predict_and_upload_mix(napi, clfs: list, tournament_data: pd.DataFrame, x_pr
             checked_combos.add(name_1)
             checked_combos.add(name_2)
 
-            wait_for.append(clf_executor.submit(
-                predict_and_upload_one_mix, napi, uploads_wait_for, (clf1, clf2), (x_pv, x_pt), (ids_v, ids_t)))
+            wait_for.append(
+                clf_executor.submit(predict_and_upload_one_mix, napi,
+                                    uploads_wait_for, (clf1, clf2),
+                                    (x_pv, x_pt), (ids_v, ids_t)))
 
     before = time.time()
     for _ in futures.as_completed(wait_for):
@@ -354,7 +415,8 @@ def predict_and_upload_mix(napi, clfs: list, tournament_data: pd.DataFrame, x_pr
     return uploads_wait_for
 
 
-def predict_and_upload_one_mix(napi, uploads_wait_for: list, clfs: tuple, xs: tuple, ids: tuple) -> None:
+def predict_and_upload_one_mix(napi, uploads_wait_for: list, clfs: tuple,
+                               xs: tuple, ids: tuple) -> None:
     clf1, clf2, = clfs
     x_pv, x_pt = xs
     ids_v, ids_t = ids
@@ -362,24 +424,32 @@ def predict_and_upload_one_mix(napi, uploads_wait_for: list, clfs: tuple, xs: tu
     y_pv = clf1.predict_proba(x_pv)[:, 1]
     y_pt = clf2.predict_proba(x_pt)[:, 1]
 
-    out = os.path.join(test_csv, "{}-{}-mix.csv".format(str(clf1).split("(")[0], str(clf2).split("(")[0]))
+    out = os.path.join(
+        test_csv, "{}-{}-mix.csv".format(
+            str(clf1).split("(")[0],
+            str(clf2).split("(")[0]))
     time_taken = '%.2fs' % (time.time() - before_one_mix)
-    logger.info(
-        'pred mix took  %s%s (%s)' % (time_taken, ' ' * (10 - len(time_taken)), out))
+    logger.info('pred mix took  %s%s (%s)' % (time_taken, ' ' *
+                                              (10 - len(time_taken)), out))
 
-    uploads_wait_for.append(upload_executor.submit(upload_one_mix, napi, out, ids_v, ids_t, y_pt, y_pv))
+    uploads_wait_for.append(
+        upload_executor.submit(upload_one_mix, napi, out, ids_v, ids_t, y_pt,
+                               y_pv))
 
 
 def upload_one_mix(napi, out, ids_v, ids_t, y_pt, y_pv):
     try:
-        valid_df = pd.DataFrame(ids_v).join(pd.DataFrame(data={'probability': y_pv}))
-        test_df = pd.DataFrame(ids_t).join(pd.DataFrame(data={'probability': y_pt}))
+        valid_df = pd.DataFrame(ids_v).join(
+            pd.DataFrame(data={'probability': y_pv}))
+        test_df = pd.DataFrame(ids_t).join(
+            pd.DataFrame(data={'probability': y_pt}))
 
         before_csv_write = time.time()
         mix = pd.concat([valid_df, test_df])
         mix.to_csv(out, index=False)
         time_taken = '%.2fs' % (time.time() - before_csv_write)
-        logger.info('write csv took %s%s (%s)' % (time_taken, ' ' * (10 - len(time_taken)), out))
+        logger.info('write csv took %s%s (%s)' % (time_taken, ' ' *
+                                                  (10 - len(time_taken)), out))
 
         return napi.upload_predictions(out)
     except Exception as e:
