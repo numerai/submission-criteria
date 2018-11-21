@@ -12,9 +12,9 @@ import logging
 import time
 from pqueue import Queue
 import numpy as np
+import schedule
 from bottle import run, request, route
 from file_manager import FileManager
-import schedule
 
 # First Party
 from database_manager import DatabaseManager

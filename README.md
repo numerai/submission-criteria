@@ -52,6 +52,26 @@ Test the server:
 curl -vv -H "Content-Type: application/json" -X POST -d '{"submission_id": "7496e75d-8be1-445f-8883-9f565d9a7244", "api_key": "h/52y/E7cm8Ih4F3cVdlBM4ZQxER+Apk6P0L7yR0lFU="}' 'http://localhost:5151/'
 ```
 
+# Running with Docker
+
+==========
+If you have problems installing requirements locally (python environment or xgboost problems) you can try to run locally using Docker.
+First create a `env.list` file
+
+```env.list
+API_KEY=<YOUR_API_KEY>
+PORT=<YOUR_PORT>
+S3_SECRET_KEY=<YOUR_S3_SECRET_KEY>
+S3_ACCESS_KEY=<YOUR_S3_ACCESS_KEY>
+```
+
+Then...
+
+```bash
+docker build -t submission-criteria .
+docker run -it --env-file env.list -p 4000:4000 submission-criteria
+```
+
 # Installing XGBoost
 
 If you are having problems installing XGBoost on Mac try `brew uninstall gcc@5` and `brew install gcc@7`. Otherwise check out [this guide](https://xgboost.readthedocs.io/en/latest/build.html).

@@ -115,11 +115,8 @@ class FileManager():
         for f in files:
             last_modifed_timestamp = os.stat(f).st_mtime
             if last_modifed_timestamp < min_timestamp:
-                self.delete(f)
-
-    def delete(self, file):
-        print(f"deleting {file}")
-        try:
-            os.remove(file)
-        except Exception as e:
-            print(e)
+                print(f"deleting {f}")
+                try:
+                    os.remove(f)
+                except Exception as e:
+                    print(e)
