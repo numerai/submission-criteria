@@ -9,10 +9,12 @@ from datetime import datetime
 import logging
 
 # Third Party
+import time
 from pqueue import Queue
 import numpy as np
 from bottle import run, request, route
-from s3_util import FileManager
+from file_manager import FileManager
+import schedule
 
 # First Party
 from database_manager import DatabaseManager
@@ -117,6 +119,19 @@ def create_logger():
     root.addHandler(ch)
 
 
+def schedule_cleanup(filemanager):
+    """
+    Tell the filemanager to clean up every day
+    """
+    # schedule a daily cleanup
+    schedule.every(1).days.do(filemanager.clean_up)
+
+    # run pending jobs every hour
+    while 1:
+        schedule.run_pending()
+        time.sleep(3600)
+
+
 def main():
     """
     The threading in this file works like this
@@ -136,8 +151,7 @@ def main():
 
     threading.Thread(
         target=run, kwargs=dict(host='0.0.0.0', port=int(PORT))).start()
-    logging.getLogger().info(
-        "Spawning new threads to score concordance")
+    logging.getLogger().info("Spawning new threads to score concordance")
 
     threading.Thread(
         target=put_submission_on_lb,
@@ -145,6 +159,10 @@ def main():
     threading.Thread(
         target=score_concordance,
         kwargs=dict(db_manager=db_manager, filemanager=fm)).start()
+
+    # clean up the /tmp folder so we don't run out of disk space
+    threading.Thread(
+        target=schedule_cleanup, kwargs=dict(filemanager=fm)).start()
 
 
 if __name__ == '__main__':
