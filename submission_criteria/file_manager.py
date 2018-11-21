@@ -4,6 +4,8 @@
 import os
 import zipfile
 import logging
+import datetime
+import glob
 
 # Third Party
 import boto3
@@ -101,4 +103,20 @@ class FileManager():
         return local_extract
 
     def clean_up(self):
-        raise NotImplementedError
+        """
+            Delete all files in local_dir that is older than 1 week
+        """
+        print(f"cleaning up {self.local_dir}")
+        now = datetime.datetime.now()
+        min_datetime = now - datetime.timedelta(weeks=1)
+        min_timestamp = min_datetime.timestamp()
+        files = glob.iglob(
+            os.path.join(self.local_dir, "**/*"), recursive=True)
+        for f in files:
+            last_modifed_timestamp = os.stat(f).st_mtime
+            if last_modifed_timestamp < min_timestamp:
+                print(f"deleting {f}")
+                try:
+                    os.remove(f)
+                except Exception as e:
+                    print(e)

@@ -2,7 +2,7 @@
 pqueue == 0.1.7
 bottle == 0.12.13
 
-# required by s3_util.py
+# required by file_manager.py
 boto3 == 1.4.7
 
 # required by database_manager.py
