@@ -13,10 +13,6 @@ import botocore
 from sklearn.metrics import log_loss
 from submission_criteria import tournament_common as tc
 
-TARGETS = [
-    "sentinel", "target_bernie", "target_elizabeth", "target_jordan",
-    "target_ken", "target_charles"
-]
 S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET", "numerai-production-uploads")
 S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
@@ -119,9 +115,9 @@ def update_loglosses(submission_id):
         test_data["id"].as_matrix())].copy()
     submission_test_data.sort_values("id", inplace=True)
     validation_logloss = log_loss(
-        validation_data[TARGETS[tournament]].as_matrix(),
+        validation_data[f"target_{tournament}"].as_matrix(),
         submission_validation_data["probability"].as_matrix())
-    test_logloss = log_loss(test_data[TARGETS[tournament]].as_matrix(),
+    test_logloss = log_loss(test_data[f"target_{tournament}"].as_matrix(),
                             submission_test_data["probability"].as_matrix())
 
     # Insert values into Postgres
