@@ -68,7 +68,7 @@ def queue_for_scoring():
 
     leaderboard_queue.put(data)
 
-    common.update_loglosses(submission_id)
+    common.update_metrics(submission_id)
 
 
 def put_submission_on_lb(db_manager, filemanager):
