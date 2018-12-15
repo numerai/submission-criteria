@@ -21,6 +21,11 @@ s3 = boto3.resource(
 S3_INPUT_DATA_BUCKET = "numerai-tournament-data"
 INPUT_DATA_PATH = '/tmp/numerai-input-data'
 
+TARGETS = [
+    "sentinel", "target_bernie", "target_elizabeth", "target_jordan",
+    "target_ken", "target_charles", "target_frank", "target_hillary"
+]
+
 
 def get_secret(key):
     """Return a secret from S3."""
