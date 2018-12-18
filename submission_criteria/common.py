@@ -10,7 +10,7 @@ import pandas as pd
 from psycopg2 import connect
 import boto3
 import botocore
-from sklearn.metrics import log_loss
+from sklearn.metrics import log_loss, roc_auc_score
 from submission_criteria import tournament_common as tc
 
 S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET", "numerai-production-uploads")
@@ -94,7 +94,8 @@ def connect_to_postgres():
     return connect(postgres_url)
 
 
-def update_loglosses(submission_id):
+# update logloss and auroc
+def update_metrics(submission_id):
     """Insert validation and test loglosses into the Postgres database."""
     print("Updating loglosses...")
     postgres_db = connect_to_postgres()
@@ -112,26 +113,36 @@ def update_loglosses(submission_id):
     validation_data.sort_values("id", inplace=True)
     test_data.sort_values("id", inplace=True)
 
-    # Calculate logloss
+    # Sort submission data
     submission_validation_data = submission.loc[submission["id"].isin(
         validation_data["id"].as_matrix())].copy()
     submission_validation_data.sort_values("id", inplace=True)
     submission_test_data = submission.loc[submission["id"].isin(
         test_data["id"].as_matrix())].copy()
     submission_test_data.sort_values("id", inplace=True)
+
+    # Calculate logloss
     validation_logloss = log_loss(
         validation_data[f"target_{tournament}"].as_matrix(),
         submission_validation_data["probability"].as_matrix())
     test_logloss = log_loss(test_data[f"target_{tournament}"].as_matrix(),
                             submission_test_data["probability"].as_matrix())
 
+    # Calculate AUROC (https://stats.stackexchange.com/questions/132777/what-does-auc-stand-for-and-what-is-it)
+    validation_auroc = roc_auc_score(
+        validation_data[f"target_{tournament}"].as_matrix(),
+        submission_validation_data["probability"].as_matrix())
+    test_auroc = roc_auc_score(
+        test_data[f"target_{tournament}"].as_matrix(),
+        submission_test_data["probability"].as_matrix())
+
     # Insert values into Postgres
-    query = "UPDATE submissions SET validation_logloss={}, test_logloss={} WHERE id = '{}'".format(
-        validation_logloss, test_logloss, submission_id)
+    query = "UPDATE submissions SET validation_logloss={}, test_logloss={}, validation_auroc={}, test_auroc={} WHERE id = '{}'".format(
+        validation_logloss, test_logloss, validation_auroc, test_auroc, submission_id)
     print(query)
     cursor.execute(query)
-    print("Updated {} with validation_logloss={} and test_logloss={}".format(
-        submission_id, validation_logloss, test_logloss))
+    print("Updated {} with validation_logloss={}, test_logloss={}, validation_auroc={}, and test_auroc={}".format(
+        submission_id, validation_logloss, test_logloss, validation_auroc, test_auroc))
     postgres_db.commit()
     cursor.close()
     postgres_db.close()
