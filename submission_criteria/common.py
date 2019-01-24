@@ -102,8 +102,8 @@ def update_metrics(submission_id):
     cursor = postgres_db.cursor()
     submission_path = download_submission(postgres_db, submission_id)
     submission = pd.read_csv(submission_path)
-    tournament, _round_number, dataset_path = get_round(
-        postgres_db, submission_id)
+    tournament, round_number, dataset_path = get_round(postgres_db,
+                                                       submission_id)
 
     # Get the truth data
     validation_data = tc.get_validation_data(s3, S3_INPUT_DATA_BUCKET,
@@ -121,28 +121,35 @@ def update_metrics(submission_id):
         test_data["id"].as_matrix())].copy()
     submission_test_data.sort_values("id", inplace=True)
 
+    if round_number < 138:
+        target_column = TARGETS[tournament]
+    else:
+        target_column = f"target_{tournament}"
+
     # Calculate logloss
     validation_logloss = log_loss(
-        validation_data[f"target_{tournament}"].as_matrix(),
+        validation_data[target_column].as_matrix(),
         submission_validation_data["probability"].as_matrix())
-    test_logloss = log_loss(test_data[f"target_{tournament}"].as_matrix(),
+    test_logloss = log_loss(test_data[target_column].as_matrix(),
                             submission_test_data["probability"].as_matrix())
 
     # Calculate AUROC (https://stats.stackexchange.com/questions/132777/what-does-auc-stand-for-and-what-is-it)
     validation_auroc = roc_auc_score(
-        validation_data[f"target_{tournament}"].as_matrix(),
+        validation_data[target_column].as_matrix(),
         submission_validation_data["probability"].as_matrix())
-    test_auroc = roc_auc_score(
-        test_data[f"target_{tournament}"].as_matrix(),
-        submission_test_data["probability"].as_matrix())
+    test_auroc = roc_auc_score(test_data[target_column].as_matrix(),
+                               submission_test_data["probability"].as_matrix())
 
     # Insert values into Postgres
     query = "UPDATE submissions SET validation_logloss={}, test_logloss={}, validation_auroc={}, test_auroc={} WHERE id = '{}'".format(
-        validation_logloss, test_logloss, validation_auroc, test_auroc, submission_id)
+        validation_logloss, test_logloss, validation_auroc, test_auroc,
+        submission_id)
     print(query)
     cursor.execute(query)
-    print("Updated {} with validation_logloss={}, test_logloss={}, validation_auroc={}, and test_auroc={}".format(
-        submission_id, validation_logloss, test_logloss, validation_auroc, test_auroc))
+    print(
+        "Updated {} with validation_logloss={}, test_logloss={}, validation_auroc={}, and test_auroc={}"
+        .format(submission_id, validation_logloss, test_logloss,
+                validation_auroc, test_auroc))
     postgres_db.commit()
     cursor.close()
     postgres_db.close()
