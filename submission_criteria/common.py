@@ -67,19 +67,17 @@ def get_filename(postgres_db, submission_id):
     return "{}/{}".format(username, filename), filename
 
 
-def download_submission(postgres_db, submission_id):
+def read_csv(postgres_db, submission_id):
     global s3
     bucket = S3_BUCKET
 
-    s3_file, filename = get_filename(postgres_db, submission_id)
-    path = os.path.join("/tmp/", filename)
-    if not os.path.isfile(path):
-        try:
-            s3.meta.client.download_file(bucket, s3_file, path)
-        except botocore.exceptions.EndpointConnectionError:
-            print("Could not download {} from S3. Skipping.".format(s3_file))
-            return None
-    return path
+    s3_file, _ = get_filename(postgres_db, submission_id)
+    try:
+        res = s3.Bucket(bucket).Object(s3_file).get()
+    except botocore.exceptions.EndpointConnectionError:
+        print("Could not download {} from S3. Skipping.".format(s3_file))
+        return None
+    return pd.read_csv(res.get('Body'))
 
 
 def connect_to_postgres():
@@ -100,16 +98,14 @@ def update_metrics(submission_id):
     print("Updating loglosses...")
     postgres_db = connect_to_postgres()
     cursor = postgres_db.cursor()
-    submission_path = download_submission(postgres_db, submission_id)
-    submission = pd.read_csv(submission_path)
+    submission = read_csv(postgres_db, submission_id)
     tournament, _round_number, dataset_path = get_round(
         postgres_db, submission_id)
 
     # Get the truth data
     validation_data = tc.get_validation_data(s3, S3_INPUT_DATA_BUCKET,
-                                             dataset_path, INPUT_DATA_PATH)
-    test_data = tc.get_test_data(s3, S3_INPUT_DATA_BUCKET, dataset_path,
-                                 INPUT_DATA_PATH)
+                                             dataset_path)
+    test_data = tc.get_test_data(s3, S3_INPUT_DATA_BUCKET, dataset_path)
     validation_data.sort_values("id", inplace=True)
     test_data.sort_values("id", inplace=True)
 
