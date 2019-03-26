@@ -261,8 +261,7 @@ def get_submission_pieces(submission_id, tournament, round_number, db_manager,
         Sorted live ids from submission data
     """
     s3_file, _ = common.get_filename(db_manager.postgres_db, submission_id)
-    local_file = filemanager.download([s3_file])[0]
-    data = pd.read_csv(local_file)
+    data = filemanager.read_csv(s3_file)
     val_ids, test_ids, live_ids = get_ids(filemanager, tournament,
                                           round_number)
     validation, tests, live = get_sorted_split(data, val_ids, test_ids,

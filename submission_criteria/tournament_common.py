@@ -27,11 +27,16 @@ def get_file(s3, s3_bucket, s3_path, filename, local_path, download=True):
     return pd.read_csv(local_filepath)
 
 
-def get_validation_data(s3, s3_bucket, s3_path, local_path, download=True):
-    return get_file(s3, s3_bucket, s3_path, "validation_data.csv", local_path,
-                    download)
+def read_csv(s3, s3_bucket, s3_file):
+    res = s3.Bucket(s3_bucket).Object(s3_file).get()
+    return pd.read_csv(res.get('Body'))
 
 
-def get_test_data(s3, s3_bucket, s3_path, local_path, download=True):
-    return get_file(s3, s3_bucket, s3_path, "test_data.csv", local_path,
-                    download)
+def get_validation_data(s3, s3_bucket, s3_path):
+    s3_filepath = os.path.join(s3_path, "validation_data.csv")
+    return read_csv(s3, s3_bucket, s3_filepath)
+
+
+def get_test_data(s3, s3_bucket, s3_path):
+    s3_filepath = os.path.join(s3_path, "test_data.csv")
+    return read_csv(s3, s3_bucket, s3_filepath)

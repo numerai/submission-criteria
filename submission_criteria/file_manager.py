@@ -10,6 +10,7 @@ import glob
 # Third Party
 import boto3
 import botocore
+import pandas as pd
 
 S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET", "numerai-production-uploads")
 S3_DATASET_BUCKET = "numerai-datasets"
@@ -71,6 +72,10 @@ class FileManager():
                               format(s3_file))
 
         return local_files
+
+    def read_csv(self, s3_file):
+        res = self.s3.Bucket(self.bucket).Object(s3_file).get()
+        return pd.read_csv(res.get('Body'))
 
     def download_dataset(self, tournament, round_number):
         bucket = S3_DATASET_BUCKET

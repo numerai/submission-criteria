@@ -62,8 +62,7 @@ class DatabaseManager():
             os.path.join(extract_dir, "numerai_tournament_data.csv"))
         # Get the user submission
         s3_file, _ = common.get_filename(self.postgres_db, submission_id)
-        local_file = filemanager.download([s3_file])[0]
-        submission_data = pd.read_csv(local_file)
+        submission_data = filemanager.read_csv(s3_file)
         validation_data = tournament_data[tournament_data.data_type ==
                                           "validation"]
         validation_submission_data = submission_data[submission_data.id.isin(
