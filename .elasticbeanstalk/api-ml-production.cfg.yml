@@ -1,36 +1,55 @@
 AWSConfigurationTemplateVersion: 1.1.0.0
 EnvironmentConfigurationMetadata:
-  DateModified: '1510195825135'
+  DateCreated: '1553793811000'
+  DateModified: '1553800976441'
 EnvironmentTier:
   Name: WebServer
   Type: Standard
 OptionSettings:
-  AWSEBSecurityGroup.aws:ec2:vpc:
-    VPCId: vpc-1ebbd078
-  aws:autoscaling:asg:
+  AWSEBAutoScalingGroup.aws:autoscaling:asg:
     MaxSize: 1
     MinSize: 1
+  AWSEBAutoScalingGroup.aws:autoscaling:updatepolicy:rollingupdate:
+    MaxBatchSize: '1'
+    MinInstancesInService: '1'
+    RollingUpdateEnabled: false
+    RollingUpdateType: Health
+  AWSEBAutoScalingLaunchConfiguration.aws:autoscaling:launchconfiguration:
+    EC2KeyName: jason
+  aws:autoscaling:asg:
+    MinSize: 1
   aws:autoscaling:launchconfiguration:
+    BlockDeviceMappings: /dev/xvdcz=:100:true:gp2
     IamInstanceProfile: api-ml-production-role
-    InstanceType: r4.2xlarge
-    SecurityGroups: sg-b7468fca
+    InstanceType: m5.xlarge
+    SecurityGroups:
+    - sg-51036423
+    - sg-2fa9e751
+    - sg-014516851d9e9bd86
   aws:ec2:vpc:
     AssociatePublicIpAddress: false
+    ELBScheme: internal
     ELBSubnets: subnet-dff52c97
     Subnets: subnet-3bf22b73
     VPCId: vpc-1ebbd078
   aws:elasticbeanstalk:cloudwatch:logs:
     StreamLogs: false
+  aws:elasticbeanstalk:command:
+    BatchSize: '1'
+    BatchSizeType: Fixed
+    DeploymentPolicy: Rolling
   aws:elasticbeanstalk:environment:
     EnvironmentType: LoadBalanced
     ServiceRole: aws-elasticbeanstalk-service-role
   aws:elasticbeanstalk:healthreporting:system:
     SystemType: enhanced
   aws:elasticbeanstalk:sns:topics:
-    Notification Endpoint: admin@numer.ai
+    Notification Endpoint: infrastructure@numer.ai
   aws:elb:loadbalancer:
     LoadBalancerHTTPPort: '80'
     LoadBalancerHTTPSPort: 'OFF'
 Platform:
   PlatformArn: arn:aws:elasticbeanstalk:us-west-2::platform/Docker running on 64bit
-    Amazon Linux/2.7.4
+    Amazon Linux/2.12.9
+Tags:
+  PrometheusNode: true

@@ -2,7 +2,7 @@ branch-defaults:
   aws:
     environment: api-ml-production
 deploy:
-  artifact: Dockerrun.aws.json
+  artifact: deploy.zip
 global:
   application_name: API ML
   default_ec2_keyname: null

@@ -17,3 +17,8 @@ cat > Dockerrun.aws.json <<HEREDOC
   ]
 }
 HEREDOC
+
+# in order to inclue .ebextensions, we need to package Dockerrun.aws.json and
+# .ebextensions together in a zip file
+rm -f deploy.zip # cleanup up old zip file
+zip -r deploy.zip Dockerrun.aws.json .ebextensions
