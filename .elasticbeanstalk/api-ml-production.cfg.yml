@@ -21,7 +21,7 @@ OptionSettings:
   aws:autoscaling:launchconfiguration:
     BlockDeviceMappings: /dev/xvdcz=:100:true:gp2
     IamInstanceProfile: api-ml-production-role
-    InstanceType: m5.xlarge
+    InstanceType: m5.2xlarge
     SecurityGroups:
     - sg-51036423
     - sg-2fa9e751
