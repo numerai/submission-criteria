@@ -5,7 +5,6 @@ import datetime
 
 # Third Party
 import pandas as pd
-from sklearn.metrics import log_loss
 import numpy as np
 import psycopg2
 import psycopg2.extras
@@ -13,7 +12,7 @@ import psycopg2.extras
 # First Party
 from submission_criteria import common
 
-BENCHMARK = 0.693
+BENCHMARK = 0.002
 
 
 class DatabaseManager():
@@ -83,9 +82,9 @@ class DatabaseManager():
                 submission_era_data > 0), "There must be data for every era"
             era_data = era_data.sort_values(["id"])
             submission_era_data = submission_era_data.sort_values(["id"])
-            logloss = log_loss(era_data[common.TARGETS[tournament]].values,
-                               submission_era_data.probability.values)
-            if logloss < BENCHMARK:
+            correlation = common.calc_correlation(era_data[common.TARGETS[tournament]],
+                                                  submission_era_data.probability)
+            if correlation > BENCHMARK:
                 better_than_random_era_count += 1
 
         consistency = better_than_random_era_count / num_eras * 100

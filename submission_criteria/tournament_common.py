@@ -2,6 +2,8 @@ import os
 import botocore
 import pandas as pd
 
+S3_INPUT_DATA_BUCKET = "numerai-tournament-data"
+
 
 def _download_file(s3, s3_bucket, s3_filepath, local_filepath):
     try:
@@ -32,11 +34,12 @@ def read_csv(s3, s3_bucket, s3_file):
     return pd.read_csv(res.get('Body'))
 
 
-def get_validation_data(s3, s3_bucket, s3_path):
-    s3_filepath = os.path.join(s3_path, "validation_data.csv")
-    return read_csv(s3, s3_bucket, s3_filepath)
+def get_validation_data(s3, version):
+    s3_filepath = os.path.join(version, 'train_test_val', "validation_data.csv")
+    print('s3_filepath', s3_filepath)
+    return read_csv(s3, S3_INPUT_DATA_BUCKET, s3_filepath)
 
 
-def get_test_data(s3, s3_bucket, s3_path):
-    s3_filepath = os.path.join(s3_path, "test_data.csv")
-    return read_csv(s3, s3_bucket, s3_filepath)
+def get_test_data(s3, version):
+    s3_filepath = os.path.join(version, 'train_test_val', "test_data.csv")
+    return read_csv(s3, S3_INPUT_DATA_BUCKET, s3_filepath)
