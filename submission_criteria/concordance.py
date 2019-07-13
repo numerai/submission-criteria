@@ -302,4 +302,5 @@ def submission_concordance(submission, db_manager, filemanager):
             "cluster_3"]
         concordance = has_concordance(P1, P2, P3, c1, c2, c3)
 
+    print('writing concordance', submission['submission_id'], concordance)
     db_manager.write_concordance(submission['submission_id'], concordance)
