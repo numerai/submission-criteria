@@ -85,7 +85,7 @@ If you are having problems installing XGBoost on Mac try `brew uninstall gcc@5` 
 
 # Community
 
-For questions or discussion about the code, either file an issue or join our [Slack](https://slack.numer.ai/).
+For questions or discussion about the code, either file an issue or join our [Community Chat](https://community.numer.ai/).
 
 # Bounty rules
 
