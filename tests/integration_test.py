@@ -443,4 +443,5 @@ def upload_one_mix(napi, out, ids_v, ids_t, y_pt, y_pv):
 
 
 if __name__ == '__main__':
-    main()
+    pass
+    # main()
