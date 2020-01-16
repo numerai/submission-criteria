@@ -8,6 +8,8 @@ import time
 import traceback
 import sys
 from uuid import uuid4 as uuid
+import shutil
+
 
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
@@ -142,7 +144,7 @@ def main():
             dest_path=DATA_SET_PATH,
             dest_filename=DATA_SET_FILE + '.zip',
             unzip=True)
-        import shutil
+
         shutil.move(
             os.path.join(DATA_SET_PATH, DATA_SET_FILE, TRAIN_FILE),
             os.path.join(DATA_SET_PATH, TRAIN_FILE))
