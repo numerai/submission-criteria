@@ -122,15 +122,15 @@ def update_metrics(submission_id):
 
     # Calculate correlation
     validation_correlation = calc_correlation(validation_data[f"target_{tournament}"], submission_validation_data.probability)
-    test_correlation = calc_correlation(test_data[f"target_{tournament}"], submission_test_data.probability)
+    # test_correlation = calc_correlation(test_data[f"target_{tournament}"], submission_test_data.probability)
 
     # Insert values into Postgres
-    query = "UPDATE submissions SET validation_correlation={}, test_correlation={} WHERE id = '{}'".format(
-        validation_correlation, test_correlation, submission_id)
+    query = "UPDATE submissions SET validation_correlation={}, WHERE id = '{}'".format(
+        validation_correlation, submission_id)
     print(query)
     cursor.execute(query)
-    print("Updated {} with validation_correlation={}, test_correlation={}'".format(
-        submission_id, validation_correlation, test_correlation))
+    print("Updated {} with validation_correlation={}'".format(
+        submission_id, validation_correlation))
     postgres_db.commit()
     cursor.close()
     postgres_db.close()
