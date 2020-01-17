@@ -121,11 +121,13 @@ def update_metrics(submission_id):
     submission_test_data.sort_values("id", inplace=True)
 
     # Calculate correlation
-    validation_correlation = calc_correlation(validation_data[f"target_{tournament}"], submission_validation_data.probability)
+    validation_correlation = calc_correlation(
+        validation_data[f"target_{tournament}"],
+        submission_validation_data.probability)
     # test_correlation = calc_correlation(test_data[f"target_{tournament}"], submission_test_data.probability)
 
     # Insert values into Postgres
-    query = "UPDATE submissions SET validation_correlation={}, WHERE id = '{}'".format(
+    query = "UPDATE submissions SET validation_correlation={} WHERE id = '{}'".format(
         validation_correlation, submission_id)
     print(query)
     cursor.execute(query)
