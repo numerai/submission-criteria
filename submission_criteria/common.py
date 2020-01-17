@@ -16,12 +16,19 @@ from submission_criteria import tournament_common as tc
 S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET", "numerai-production-uploads")
 S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
-s3 = boto3.resource(
-    "s3", aws_access_key_id=S3_ACCESS_KEY, aws_secret_access_key=S3_SECRET_KEY)
+s3 = boto3.resource("s3",
+                    aws_access_key_id=S3_ACCESS_KEY,
+                    aws_secret_access_key=S3_SECRET_KEY)
 
 TARGETS = [
-    "sentinel", "target_bernie", "target_elizabeth", "target_jordan",
-    "target_ken", "target_charles", "target_frank", "target_hillary",
+    "sentinel",
+    "target_bernie",
+    "target_elizabeth",
+    "target_jordan",
+    "target_ken",
+    "target_charles",
+    "target_frank",
+    "target_hillary",
     "target_kazutsugi",
 ]
 
@@ -92,13 +99,14 @@ def connect_to_postgres():
 
 
 def calc_correlation(targets, predictions):
-    return np.corrcoef(targets, predictions.rank(pct=True, method="first"))[0, 1]
+    return np.corrcoef(targets, predictions.rank(pct=True, method="first"))[0,
+                                                                            1]
 
 
 # update logloss and auroc
 def update_metrics(submission_id):
     """Insert validation and test loglosses into the Postgres database."""
-    print("Updating loglosses...")
+    print("Updating loglosses...", submission_id)
     postgres_db = connect_to_postgres()
     cursor = postgres_db.cursor()
     submission = read_csv(postgres_db, submission_id)
@@ -106,6 +114,7 @@ def update_metrics(submission_id):
         postgres_db, submission_id)
 
     # Get the truth data
+    print("Getting validation data...", submission_id)
     dataset_version = dataset_path.split('/')[0]
     validation_data = tc.get_validation_data(s3, dataset_version)
     test_data = tc.get_test_data(s3, dataset_version)
@@ -113,6 +122,7 @@ def update_metrics(submission_id):
     test_data.sort_values("id", inplace=True)
 
     # Sort submission data
+    print("Getting submission data...", submission_id)
     submission_validation_data = submission.loc[submission["id"].isin(
         validation_data["id"].as_matrix())].copy()
     submission_validation_data.sort_values("id", inplace=True)
@@ -121,12 +131,14 @@ def update_metrics(submission_id):
     submission_test_data.sort_values("id", inplace=True)
 
     # Calculate correlation
+    print("Calculating validation_correlation...", submission_id)
     validation_correlation = calc_correlation(
         validation_data[f"target_{tournament}"],
         submission_validation_data.probability)
     # test_correlation = calc_correlation(test_data[f"target_{tournament}"], submission_test_data.probability)
 
     # Insert values into Postgres
+    print("Updating validation_correlation...", submission_id)
     query = "UPDATE submissions SET validation_correlation={} WHERE id = '{}'".format(
         validation_correlation, submission_id)
     print(query)
