@@ -68,8 +68,6 @@ def queue_for_scoring():
 
     leaderboard_queue.put(data)
 
-    common.update_metrics(submission_id)
-
 
 def put_submission_on_lb(db_manager, filemanager):
     """Pulls submissions from leaderboard_queue and pushes submissions to concordance queue for scoring"""
@@ -85,6 +83,11 @@ def put_submission_on_lb(db_manager, filemanager):
             leaderboard_queue.task_done()
         except Exception:
             logging.exception("Exception updating submission.")
+        try:
+            common.update_metrics(submission["submission_id"])
+        except Exception:
+            logging.exception(
+                "Exception calling update_metrics for submission.")
 
 
 def score_concordance(db_manager, filemanager):
@@ -149,20 +152,20 @@ def main():
     fm = FileManager('/tmp/', logging)
     logging.getLogger().info("Creating servers")
 
-    threading.Thread(
-        target=run, kwargs=dict(host='0.0.0.0', port=int(PORT))).start()
+    threading.Thread(target=run, kwargs=dict(host='0.0.0.0',
+                                             port=int(PORT))).start()
     logging.getLogger().info("Spawning new threads to score concordance")
 
-    threading.Thread(
-        target=put_submission_on_lb,
-        kwargs=dict(db_manager=db_manager, filemanager=fm)).start()
-    threading.Thread(
-        target=score_concordance,
-        kwargs=dict(db_manager=db_manager, filemanager=fm)).start()
+    threading.Thread(target=put_submission_on_lb,
+                     kwargs=dict(db_manager=db_manager,
+                                 filemanager=fm)).start()
+    threading.Thread(target=score_concordance,
+                     kwargs=dict(db_manager=db_manager,
+                                 filemanager=fm)).start()
 
     # clean up the /tmp folder so we don't run out of disk space
-    threading.Thread(
-        target=schedule_cleanup, kwargs=dict(filemanager=fm)).start()
+    threading.Thread(target=schedule_cleanup,
+                     kwargs=dict(filemanager=fm)).start()
 
 
 if __name__ == '__main__':
