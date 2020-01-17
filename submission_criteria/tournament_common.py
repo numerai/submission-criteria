@@ -35,11 +35,7 @@ def read_csv(s3, s3_bucket, s3_file):
 
 
 def get_validation_data(s3, version):
-    s3_filepath = os.path.join(version, 'train_test_val', "validation_data.csv")
+    s3_filepath = os.path.join(version, 'train_test_val',
+                               "validation_data.csv")
     print('s3_filepath', s3_filepath)
-    return read_csv(s3, S3_INPUT_DATA_BUCKET, s3_filepath)
-
-
-def get_test_data(s3, version):
-    s3_filepath = os.path.join(version, 'train_test_val', "test_data.csv")
     return read_csv(s3, S3_INPUT_DATA_BUCKET, s3_filepath)
