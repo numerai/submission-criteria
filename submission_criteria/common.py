@@ -117,19 +117,11 @@ def update_metrics(submission_id):
     print("Getting validation data...", submission_id)
     dataset_version = dataset_path.split('/')[0]
     validation_data = tc.get_validation_data(s3, dataset_version)
-    validation_data.sort_values("id", inplace=True)
-
-    # Sort submission data
-    print("Getting submission data...", submission_id)
-    submission_validation_data = submission.loc[submission["id"].isin(
-        validation_data["id"].as_matrix())].copy()
-    submission_validation_data.sort_values("id", inplace=True)
 
     # Calculate correlation
     print("Calculating validation_correlation...", submission_id)
     validation_correlation = calc_correlation(
-        validation_data[f"target_{tournament}"],
-        submission_validation_data.probability)
+        validation_data[f"target_{tournament}"], submission.probability)
 
     # Insert values into Postgres
     print("Updating validation_correlation...", submission_id)
