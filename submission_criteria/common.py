@@ -78,12 +78,7 @@ def read_csv(postgres_db, submission_id):
     bucket = S3_BUCKET
 
     s3_file, _ = get_filename(postgres_db, submission_id)
-    try:
-        res = s3.Bucket(bucket).Object(s3_file).get()
-    except botocore.exceptions.EndpointConnectionError:
-        print("Could not download {} from S3. Skipping.".format(s3_file))
-        return None
-    return pd.read_csv(res.get('Body'))
+    return pd.read_csv(f's3://{bucket}/{s3_file}')
 
 
 def connect_to_postgres():
