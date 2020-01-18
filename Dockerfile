@@ -9,6 +9,8 @@ RUN apt-get -qq install default-libmysqlclient-dev
 RUN apt-get -qq install gcc
 
 WORKDIR /app
+COPY ./requirements.txt ./
+RUN pip install -r ./requirements.txt
 COPY ./setup.py ./
 COPY ./submission_criteria ./submission_criteria
 
