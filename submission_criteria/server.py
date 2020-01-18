@@ -74,16 +74,6 @@ def put_submission_on_lb(db_manager, filemanager):
     while True:
         submission = leaderboard_queue.get()
         try:
-            db_manager.update_leaderboard(submission["submission_id"],
-                                          filemanager)
-
-            for queue in [concordance_queue]:
-                queue.put(submission)
-
-            leaderboard_queue.task_done()
-        except Exception:
-            logging.exception("Exception updating submission.")
-        try:
             common.update_metrics(submission["submission_id"])
         except Exception:
             logging.exception(
