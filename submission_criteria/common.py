@@ -105,6 +105,9 @@ def update_metrics(submission_id):
     postgres_db = connect_to_postgres()
     cursor = postgres_db.cursor()
     submission = read_csv(postgres_db, submission_id).set_index('id')
+    submission.rename(columns=lambda col: 'probability'
+                      if col.startswith('prediction_', ) else col,
+                      inplace=True)
     tournament, _round_number, dataset_path = get_round(
         postgres_db, submission_id)
 
