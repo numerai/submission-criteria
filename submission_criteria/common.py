@@ -109,19 +109,19 @@ def update_metrics(submission_id):
     print("Updating loglosses...", submission_id)
     postgres_db = connect_to_postgres()
     cursor = postgres_db.cursor()
-    submission = read_csv(postgres_db, submission_id)
+    submission = read_csv(postgres_db, submission_id).set_index('id')
     tournament, _round_number, dataset_path = get_round(
         postgres_db, submission_id)
 
     # Get the truth data
     print("Getting validation data...", submission_id)
     dataset_version = dataset_path.split('/')[0]
-    validation_data = tc.get_validation_data(s3, dataset_version)
+    validation_data = tc.get_validation_data(s3,
+                                             dataset_version).set_index('id')
 
     # Sort submission data
     print("Getting validation subset of data...", submission_id)
-    submission_validation_data = submission.loc[submission["id"].isin(
-        validation_data["id"].as_matrix())].copy()
+    submission_validation_data = submission.loc[validation_data.index]
 
     # Calculate correlation
     print("Calculating validation_correlation...", submission_id)
